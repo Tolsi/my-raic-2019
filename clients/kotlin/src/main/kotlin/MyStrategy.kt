@@ -1,17 +1,21 @@
 import model.*
 
 class MyStrategy {
-
-    fun getAction(unit: model.Unit, game: Game, debug: Debug): UnitAction {
+    fun nearestUnit(unit: model.Unit, game: Game): model.Unit? {
         var nearestEnemy: model.Unit? = null
         for (other in game.units) {
             if (other.playerId != unit.playerId) {
-                if (nearestEnemy == null || distanceSqr(unit.position,
-                                other.position) < distanceSqr(unit.position, nearestEnemy.position)) {
+                if (nearestEnemy == null ||
+                        distanceSqr(unit.position, other.position) <
+                        distanceSqr(unit.position, nearestEnemy.position)) {
                     nearestEnemy = other
                 }
             }
         }
+        return nearestEnemy
+    }
+
+    fun nearestWeapon(unit: model.Unit, game: Game): LootBox? {
         var nearestWeapon: LootBox? = null
         for (lootBox in game.lootBoxes) {
             if (lootBox.item is Item.Weapon) {
@@ -21,6 +25,13 @@ class MyStrategy {
                 }
             }
         }
+        return nearestWeapon
+    }
+
+    fun getAction(unit: model.Unit, game: Game, debug: Debug): UnitAction {
+        val nearestEnemy: model.Unit? = nearestUnit(unit, game)
+        val nearestWeapon: LootBox? = nearestWeapon(unit, game)
+
         var targetPos: Vec2Double = unit.position
         if (unit.weapon == null && nearestWeapon != null) {
             targetPos = nearestWeapon.position
