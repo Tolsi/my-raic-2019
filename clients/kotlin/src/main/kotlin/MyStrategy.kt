@@ -1,7 +1,6 @@
 import korma_geom.*
 import model.*
 import java.io.OutputStream
-import java.util.*
 
 object Global {
     var properties: model.Properties = model.Properties()
@@ -68,7 +67,7 @@ class MyStrategy {
         fun isCanHitMyself(target: Point): Boolean {
             val weaponParams = me.weapon!!.params
             val collisionPoint = Line.createFromPointAimAndSpeed(me.centerPosition().toPoint(), target, weaponParams.bullet.speed).find { p ->
-                Global.levelAsRectangles.any { r -> r.intersects(p.toRectangle(weaponParams.bullet.size)) }
+                Global.levelAsRectangles.plus(enemies().map { it.toRectangle() }).any { r -> r.intersects(p.toRectangle(weaponParams.bullet.size)) }
             }
             if (collisionPoint == null) {
                 return false
