@@ -48,6 +48,10 @@ class MyStrategy {
             return game.units.findAmongBy({ it.playerId != me.playerId }, { distanceToMe(it.position).toInt() })
         }
 
+        public fun enemies(): List<model.Unit> {
+            return game.units.filter { it.playerId != me.playerId }
+        }
+
         public inline fun <reified T : model.Item> nearestItemType(): LootBox? {
             return game.lootBoxes.findAmongBy({ it.item is T }, { distanceToMe(it.position).toInt() })
         }
@@ -71,7 +75,9 @@ class MyStrategy {
                 return false
             }
             if (weaponParams.explosion?.radius ?: 0.0 > 0) {
-                return collisionPoint.toRectangle(weaponParams.bullet.size).intersects(me.toRectangle())
+                val explosionRadiusRectangle = collisionPoint.toRectangle(weaponParams.explosion!!.radius)
+                return explosionRadiusRectangle.intersects(me.toRectangle()) &&
+                        !enemies().any { explosionRadiusRectangle.intersects(it.toRectangle()) }
             }
             return false
         }
