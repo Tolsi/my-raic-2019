@@ -91,14 +91,12 @@ class MyStrategy {
         val targetToUnit: model.Unit? = s.nearestEnemy()
         val nearestWeapon: LootBox? = s.nearestItemType<Item.Weapon>()
 
-        val goToPoint: Vec2Double = if (me.weapon == null && nearestWeapon != null) {
+        val goToPoint: Vec2Double = if (me.health < game.properties.unitMaxHealth * 0.45) {
+            s.nearestItemType<Item.HealthPack>()?.position.let { me.position }
+        } else if (me.weapon == null && nearestWeapon != null) {
             nearestWeapon.position
         } else if (targetToUnit != null) {
-            if (me.health < game.properties.unitMaxHealth * 0.2) {
-                s.nearestItemType<Item.HealthPack>()?.position.let { me.position }
-            } else {
-                targetToUnit.centerPosition()
-            }
+             targetToUnit.centerPosition()
         } else {
             me.position
         }
