@@ -28,6 +28,17 @@ class MyStrategy {
         return nearestWeapon
     }
 
+    fun isBackToBack(unit: model.Unit, game: Game): Boolean {
+        for (other in game.units) {
+            if (other.playerId != unit.playerId) {
+                if (distanceSqr(unit.position, other.position) < 20.0) {
+                    return true
+                }
+            }
+        }
+        return false
+    }
+
     fun getAction(unit: model.Unit, game: Game, debug: Debug): UnitAction {
         val nearestEnemy: model.Unit? = nearestUnit(unit, game)
         val nearestWeapon: LootBox? = nearestWeapon(unit, game)
