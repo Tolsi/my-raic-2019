@@ -51,6 +51,7 @@ class MyStrategy {
         if (targetPos.x < unit.position.x && game.level.tiles[(unit.position.x - 1).toInt()][(unit.position.y).toInt()] == Tile.WALL) {
             jump = true
         }
+        jump = jump || isBackToBack(unit, game)
         val action = UnitAction()
         action.velocity = targetPos.x - unit.position.x
         action.jump = jump
