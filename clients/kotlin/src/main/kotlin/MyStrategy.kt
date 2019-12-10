@@ -1,4 +1,3 @@
-import com.google.common.collect.EvictingQueue
 import korma_geom.*
 import model.*
 import java.io.OutputStream
@@ -26,7 +25,7 @@ class MyStrategy {
         public lateinit var me: model.Unit
         public lateinit var game: Game
         public lateinit var debug: Debug
-        public val lastStepsUnits: Queue<Game> = EvictingQueue.create(10)
+        public val lastStepsUnits: MutableList<Game> = mutableListOf()
 
         constructor() {
             me = Unit()
@@ -60,7 +59,7 @@ class MyStrategy {
 
         // todo remove after deikstra algo will be realized
         fun isStayOnPlaceLastMoves(n: Int): Boolean {
-            return lastStepsUnits.take(n).map { it.units.find { it.id == me.id }!!.position }.toSet().size == 1
+            return lastStepsUnits.reversed().take(n).map { it.units.find { it.id == me.id }!!.position }.toSet().size == 1
         }
 
         // todo что будет если я выстрелю сейчас? попаду ли я в себя?
@@ -142,6 +141,9 @@ class MyStrategy {
         action.plantMine = false
 
         s.lastStepsUnits.add(game)
+        if (s.lastStepsUnits.size == 11) {
+            s.lastStepsUnits.removeAt(0)
+        }
 
         return action
     }
