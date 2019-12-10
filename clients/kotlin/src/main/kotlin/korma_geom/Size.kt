@@ -1,7 +1,6 @@
 package korma_geom
 
 import korma_geom.internal.*
-import korma_geom.interpolation.*
 
 interface ISize {
     val width: Double
@@ -80,21 +79,10 @@ fun SizeInt.setTo(that: SizeInt) = setTo(that.width, that.height)
 fun SizeInt.setToScaled(sx: Double, sy: Double) = setTo((this.width * sx).toInt(), (this.height * sy).toInt())
 inline fun SizeInt.setToScaled(sx: Number, sy: Number = sx) = setToScaled(sx.toDouble(), sy.toDouble())
 
-fun SizeInt.anchoredIn(container: RectangleInt, anchor: Anchor, out: RectangleInt = RectangleInt()): RectangleInt {
-    return out.setTo(
-        ((container.width - this.width) * anchor.sx).toInt(),
-        ((container.height - this.height) * anchor.sy).toInt(),
-        width,
-        height
-    )
-}
 
 operator fun SizeInt.contains(v: SizeInt): Boolean = (v.width <= width) && (v.height <= height)
 operator fun SizeInt.times(v: Double) = SizeInt(Size((width * v).toInt(), (height * v).toInt()))
 inline operator fun SizeInt.times(v: Number) = times(v.toDouble())
-
-fun SizeInt.getAnchorPosition(anchor: Anchor, out: PointInt = PointInt(0, 0)): PointInt =
-    out.setTo((width * anchor.sx).toInt(), (height * anchor.sy).toInt())
 
 fun Size.asInt(): SizeInt = SizeInt(this)
 fun SizeInt.asDouble(): Size = this.size

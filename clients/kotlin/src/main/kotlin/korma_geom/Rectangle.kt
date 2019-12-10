@@ -1,7 +1,6 @@
 package korma_geom
 
 import korma_geom.internal.*
-import korma_geom.interpolation.*
 
 interface IRectangle {
     val x: Double
@@ -83,24 +82,12 @@ data class Rectangle(
 
     fun clone() = Rectangle(x, y, width, height)
 
-    fun setToAnchoredRectangle(item: Rectangle, anchor: Anchor, container: Rectangle) = setToAnchoredRectangle(item.size, anchor, container)
-
-    fun setToAnchoredRectangle(item: Size, anchor: Anchor, container: Rectangle) = setTo(
-        container.x + anchor.sx * (container.width - item.width),
-        container.y + anchor.sy * (container.height - item.height),
-        item.width,
-        item.height
-    )
-
     //override fun toString(): String = "Rectangle([${left.niceStr}, ${top.niceStr}]-[${right.niceStr}, ${bottom.niceStr}])"
     override fun toString(): String =
         "Rectangle(x=${x.niceStr}, y=${y.niceStr}, width=${width.niceStr}, height=${height.niceStr})"
 
     fun toStringBounds(): String =
         "Rectangle([${left.niceStr},${top.niceStr}]-[${right.niceStr},${bottom.niceStr}])"
-
-    fun getAnchoredPosition(anchor: Anchor, out: Point = Point()): Point =
-        out.setTo(left + width * anchor.sx, top + height * anchor.sy)
 
     fun toInt() = RectangleInt(x, y, width, height)
 }
@@ -201,17 +188,6 @@ fun RectangleInt.setBoundsTo(left: Int, top: Int, right: Int, bottom: Int) = set
 ////////////////////
 
 operator fun IRectangleInt.contains(v: SizeInt): Boolean = (v.width <= width) && (v.height <= height)
-
-fun IRectangleInt.anchoredIn(container: RectangleInt, anchor: Anchor, out: RectangleInt = RectangleInt()): RectangleInt =
-    out.setTo(
-        ((container.width - this.width) * anchor.sx).toInt(),
-        ((container.height - this.height) * anchor.sy).toInt(),
-        width,
-        height
-    )
-
-fun IRectangleInt.getAnchorPosition(anchor: Anchor, out: PointInt = PointInt()): PointInt =
-    out.setTo((x + width * anchor.sx).toInt(), (y + height * anchor.sy).toInt())
 
 fun Rectangle.asInt() = RectangleInt(this)
 fun RectangleInt.asDouble() = this.rect

@@ -3,7 +3,6 @@
 package korma_geom
 
 import korma_geom.internal.*
-import korma_geom.interpolation.*
 import kotlin.math.*
 
 interface IPoint {
@@ -195,5 +194,3 @@ fun Iterable<IPoint>.getPolylineLength(): Double {
     }
     return out
 }
-
-fun Iterable<IPoint>.bounds(out: Rectangle = Rectangle(), bb: BoundsBuilder = BoundsBuilder()): Rectangle = BoundsBuilder().add(this).getBounds(out)

@@ -24,6 +24,10 @@ class ColorFloat {
             result.a = StreamUtil.readFloat(stream)
             return result
         }
+
+        val Red = ColorFloat(1f,0f,0f,1f)
+        val Green = ColorFloat(0f,1f,0f,1f)
+        val Blue = ColorFloat(0f,0f,1f,1f)
     }
     @Throws(java.io.IOException::class)
     fun writeTo(stream: java.io.OutputStream) {

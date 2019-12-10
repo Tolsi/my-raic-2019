@@ -2,7 +2,6 @@ package korma_geom
 
 import korma_geom.range.OpenRange
 import korma_geom.internal.umod
-import korma_geom.interpolation.*
 import kotlin.math.PI
 import kotlin.math.absoluteValue
 import kotlin.math.atan2
@@ -109,5 +108,3 @@ fun Angle.inBetween(min: Angle, max: Angle, inclusive: Boolean): Boolean {
 inline val Number.degrees get() = Angle.fromDegrees(this)
 inline val Number.radians get() = Angle.fromRadians(this)
 val Angle.normalized get() = Angle(radians umod Angle.MAX_RADIANS)
-
-fun Double.interpolate(l: Angle, r: Angle): Angle = this.interpolate(l.radians, r.radians).radians

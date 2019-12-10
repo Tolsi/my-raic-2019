@@ -1,7 +1,5 @@
 package model
 
-import util.StreamUtil
-
 enum class Tile private constructor(var discriminant: Int) {
     EMPTY(0),
     WALL(1),

@@ -43,4 +43,8 @@ class Vec2Double {
         return result
     }
 
+    override fun toString(): String {
+        return "Vec2Double(x=$x, y=$y)"
+    }
+
 }
