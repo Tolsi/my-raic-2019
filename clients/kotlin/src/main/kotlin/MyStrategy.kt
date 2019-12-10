@@ -29,7 +29,7 @@ class MyStrategy {
         constructor() {
             me = Unit()
             game = Game()
-            debug = Debug(OutputStream.nullOutputStream())
+            debug = Debug(object : OutputStream() {override fun write(p0: Int) {}})
         }
 
         constructor(me: model.Unit, game: Game, debug: Debug) {
@@ -68,10 +68,7 @@ class MyStrategy {
             val weaponParams = me.weapon!!.params
             val collisionPoint = Line.createFromPointAimAndSpeed(me.centerPosition().toPoint(), target, weaponParams.bullet.speed).find { p ->
                 Global.levelAsRectangles.plus(enemies().map { it.toRectangle() }).any { r -> r.intersects(p.toRectangle(weaponParams.bullet.size)) }
-            }
-            if (collisionPoint == null) {
-                return false
-            }
+            } ?: return false
             if (weaponParams.explosion?.radius ?: 0.0 > 0) {
                 val explosionRadiusRectangle = collisionPoint.toRectangle(weaponParams.explosion!!.radius)
                 return explosionRadiusRectangle.intersects(me.toRectangle()) &&
