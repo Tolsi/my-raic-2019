@@ -1,55 +1,63 @@
+import com.google.common.collect.EvictingQueue
 import model.*
+import java.io.OutputStream
+import java.util.*
 
 class MyStrategy {
+    class Situation {
+        public lateinit var me: model.Unit
+        public lateinit var game: Game
+        public lateinit var debug: Debug
+        public val lastStepsUnits: Queue<Game> = EvictingQueue.create(10)
 
-    class Ext(val me: model.Unit, val game: Game, val debug: Debug) {
-        fun <T> findBest(all: Array<T>,
-                         filter: (T) -> Boolean,
-                         compare: (T) -> Int): T? {
-            return all.filter(filter).sortedBy(compare).firstOrNull()
+        constructor() {
+            me = Unit()
+            game = Game()
+            debug = Debug(OutputStream.nullOutputStream())
+        }
+        constructor(me: model.Unit, game: Game, debug: Debug) {
+            update(me, game, debug)
+        }
+
+        fun update(me: model.Unit, game: Game, debug: Debug) {
+            this.me = me
+            this.game = game
+            this.debug = debug
         }
 
         public fun nearestEnemy(): model.Unit? {
-            return findBest(game.units, { it.playerId != me.playerId }, { -distanceSqr(it.position, me.position).toInt() })
+            return game.units.findAmongBy({ it.playerId != me.playerId }, { -distanceToMe(it.position).toInt() })
         }
 
         public inline fun <reified T : model.Item> nearestItemType(): LootBox? {
-            return findBest(game.lootBoxes, { it.item is T }, { -distanceSqr(it.position, me.position).toInt() })
+            return game.lootBoxes.findAmongBy({ it.item is T }, { -distanceToMe(it.position).toInt() })
         }
 
-        fun distanceToMe(smtn: model.Unit): Double = distanceSqr(smtn.position, me.position)
-    }
+        fun distanceToMe(smtn: Vec2Double): Double = distanceSqr(smtn, me.position)
 
-    fun isBackToBack(unit: model.Unit, game: Game): Boolean {
-        for (other in game.units) {
-            if (other.playerId != unit.playerId) {
-                if (distanceSqr(unit.position, other.position) < 20.0) {
-                    return true
-                }
-            }
+        // todo remove after deikstra algo will be realized
+        fun isStayOnPlaceLastMoves(n: Int): Boolean {
+            return lastStepsUnits.take(n).map { it.units.find { it.id == me.id }!!.position }.toSet().size == 1
         }
-        return false
     }
 
+    private val s = Situation()
     fun getAction(me: model.Unit, game: Game, debug: Debug): UnitAction {
-        val c = Ext(me, game, debug)
-        val targetToUnit: model.Unit? = c.nearestEnemy()
+        s.update(me, game, debug)
+        val targetToUnit: model.Unit? = s.nearestEnemy()
+        val nearestWeapon: LootBox? = s.nearestItemType<Item.Weapon>()
 
-        val goToPoint: Vec2Double = {
-            val nearestWeapon: LootBox? = c.nearestItemType<Item.Weapon>()
-
-            if (me.weapon == null && nearestWeapon != null) {
-                nearestWeapon.position
-            } else if (targetToUnit != null) {
-                if (me.health < game.properties.unitMaxHealth * 0.2) {
-                    c.nearestItemType<Item.HealthPack>()?.position.let { me.position }
-                } else {
-                    targetToUnit.position
-                }
+        val goToPoint: Vec2Double = if (me.weapon == null && nearestWeapon != null) {
+            nearestWeapon.position
+        } else if (targetToUnit != null) {
+            if (me.health < game.properties.unitMaxHealth * 0.2) {
+                s.nearestItemType<Item.HealthPack>()?.position.let { me.position }
             } else {
-                me.position
+                targetToUnit.position
             }
-        }()
+        } else {
+            me.position
+        }
 
         debug.draw(CustomData.Log("Target pos: $goToPoint"))
         var aim = Vec2Double(0.0, 0.0)
@@ -67,7 +75,8 @@ class MyStrategy {
                 game.level.tiles[(me.position.x - 1).toInt()][(me.position.y).toInt()] == Tile.WALL) {
             jump = true
         }
-        jump = jump || isBackToBack(me, game)
+        jump = jump || s.isStayOnPlaceLastMoves(5)
+
         val action = UnitAction()
         action.velocity = goToPoint.x - me.position.x
         action.jump = jump
@@ -77,12 +86,20 @@ class MyStrategy {
         action.reload = false
         action.swapWeapon = false
         action.plantMine = false
+
+        s.lastStepsUnits.add(game)
+
         return action
     }
 
     companion object {
-        public fun distanceSqr(a: Vec2Double, b: Vec2Double): Double {
+        fun distanceSqr(a: Vec2Double, b: Vec2Double): Double {
             return (a.x - b.x) * (a.x - b.x) + (a.y - b.y) * (a.y - b.y)
+        }
+
+        fun <T> Array<T>.findAmongBy(filter: (T) -> Boolean,
+                                     compare: (T) -> Int): T? {
+            return this.filter(filter).sortedBy(compare).firstOrNull()
         }
     }
 }
