@@ -1,31 +1,23 @@
 import model.*
 
 class MyStrategy {
-    fun nearestUnit(unit: model.Unit, game: Game): model.Unit? {
-        var nearestEnemy: model.Unit? = null
-        for (other in game.units) {
-            if (other.playerId != unit.playerId) {
-                if (nearestEnemy == null ||
-                        distanceSqr(unit.position, other.position) <
-                        distanceSqr(unit.position, nearestEnemy.position)) {
-                    nearestEnemy = other
-                }
-            }
-        }
-        return nearestEnemy
-    }
 
-    fun nearestWeapon(unit: model.Unit, game: Game): LootBox? {
-        var nearestWeapon: LootBox? = null
-        for (lootBox in game.lootBoxes) {
-            if (lootBox.item is Item.Weapon) {
-                if (nearestWeapon == null || distanceSqr(unit.position,
-                                lootBox.position) < distanceSqr(unit.position, nearestWeapon.position)) {
-                    nearestWeapon = lootBox
-                }
-            }
+    class Ext(val me: model.Unit, val game: Game, val debug: Debug) {
+        fun <T> findBest(all: Array<T>,
+                         filter: (T) -> Boolean,
+                         compare: (T) -> Int): T? {
+            return all.filter(filter).sortedBy(compare).firstOrNull()
         }
-        return nearestWeapon
+
+        public fun nearestEnemy(): model.Unit? {
+            return findBest(game.units, { it.playerId != me.playerId }, { -distanceSqr(it.position, me.position).toInt() })
+        }
+
+        public inline fun <reified T : model.Item> nearestItemType(): LootBox? {
+            return findBest(game.lootBoxes, { it.item is T }, { -distanceSqr(it.position, me.position).toInt() })
+        }
+
+        fun distanceToMe(smtn: model.Unit): Double = distanceSqr(smtn.position, me.position)
     }
 
     fun isBackToBack(unit: model.Unit, game: Game): Boolean {
@@ -39,34 +31,47 @@ class MyStrategy {
         return false
     }
 
-    fun getAction(unit: model.Unit, game: Game, debug: Debug): UnitAction {
-        val nearestEnemy: model.Unit? = nearestUnit(unit, game)
-        val nearestWeapon: LootBox? = nearestWeapon(unit, game)
+    fun getAction(me: model.Unit, game: Game, debug: Debug): UnitAction {
+        val c = Ext(me, game, debug)
+        val targetToUnit: model.Unit? = c.nearestEnemy()
 
-        var targetPos: Vec2Double = unit.position
-        if (unit.weapon == null && nearestWeapon != null) {
-            targetPos = nearestWeapon.position
-        } else if (nearestEnemy != null) {
-            targetPos = nearestEnemy.position
-        }
-        debug.draw(CustomData.Log("Target pos: $targetPos"))
+        val goToPoint: Vec2Double = {
+            val nearestWeapon: LootBox? = c.nearestItemType<Item.Weapon>()
+
+            if (me.weapon == null && nearestWeapon != null) {
+                nearestWeapon.position
+            } else if (targetToUnit != null) {
+                if (me.health < game.properties.unitMaxHealth * 0.2) {
+                    c.nearestItemType<Item.HealthPack>()?.position.let { me.position }
+                } else {
+                    targetToUnit.position
+                }
+            } else {
+                me.position
+            }
+        }()
+
+        debug.draw(CustomData.Log("Target pos: $goToPoint"))
         var aim = Vec2Double(0.0, 0.0)
-        if (nearestEnemy != null) {
-            aim = Vec2Double(nearestEnemy.position.x - unit.position.x,
-                    nearestEnemy.position.y - unit.position.y)
+        if (targetToUnit != null) {
+            aim = Vec2Double(
+                    targetToUnit.position.x - me.position.x,
+                    targetToUnit.position.y - me.position.y)
         }
-        var jump = targetPos.y > unit.position.y;
-        if (targetPos.x > unit.position.x && game.level.tiles[(unit.position.x + 1).toInt()][(unit.position.y).toInt()] == Tile.WALL) {
+        var jump = goToPoint.y > me.position.y;
+        if (goToPoint.x > me.position.x &&
+                game.level.tiles[(me.position.x + 1).toInt()][(me.position.y).toInt()] == Tile.WALL) {
             jump = true
         }
-        if (targetPos.x < unit.position.x && game.level.tiles[(unit.position.x - 1).toInt()][(unit.position.y).toInt()] == Tile.WALL) {
+        if (goToPoint.x < me.position.x &&
+                game.level.tiles[(me.position.x - 1).toInt()][(me.position.y).toInt()] == Tile.WALL) {
             jump = true
         }
-        jump = jump || isBackToBack(unit, game)
+        jump = jump || isBackToBack(me, game)
         val action = UnitAction()
-        action.velocity = targetPos.x - unit.position.x
+        action.velocity = goToPoint.x - me.position.x
         action.jump = jump
-        action.jumpDown = !jump
+        action.jumpDown = goToPoint.x < me.position.x
         action.aim = aim
         action.shoot = true
         action.reload = false
@@ -76,7 +81,7 @@ class MyStrategy {
     }
 
     companion object {
-        internal fun distanceSqr(a: Vec2Double, b: Vec2Double): Double {
+        public fun distanceSqr(a: Vec2Double, b: Vec2Double): Double {
             return (a.x - b.x) * (a.x - b.x) + (a.y - b.y) * (a.y - b.y)
         }
     }
