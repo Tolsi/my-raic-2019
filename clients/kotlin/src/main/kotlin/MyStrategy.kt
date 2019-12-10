@@ -129,7 +129,7 @@ class MyStrategy {
         val action = UnitAction()
         action.velocity = goToPoint.x - me.position.x
         action.jump = jump
-        action.jumpDown = goToPoint.x < me.position.x
+        action.jumpDown = goToPoint.y < me.position.y
         action.aim = aim
         action.shoot = shoot
         action.reload = false
