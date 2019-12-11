@@ -29,7 +29,9 @@ class MyStrategy {
         constructor() {
             me = Unit()
             game = Game()
-            debug = Debug(object : OutputStream() {override fun write(p0: Int) {}})
+            debug = Debug(object : OutputStream() {
+                override fun write(p0: Int) {}
+            })
         }
 
         constructor(me: model.Unit, game: Game, debug: Debug) {
@@ -100,7 +102,7 @@ class MyStrategy {
         } else if (me.weapon == null && nearestWeapon != null) {
             nearestWeapon.position
         } else if (targetToUnit != null) {
-             targetToUnit.topCenterPosition
+            targetToUnit.topCenterPosition
         } else {
             me.position
         }
