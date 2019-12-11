@@ -60,7 +60,7 @@ open class MySituativeStrategy: Strategy() {
         jump = jump || s.isStayOnPlaceLastMoves(5)
 
         val action = UnitAction()
-        action.velocity = goToPoint.x - me.position.x * Global.properties.unitMaxHorizontalSpeed
+        action.velocity = (goToPoint.x - me.position.x) * Global.properties.unitMaxHorizontalSpeed
         action.jump = jump
         action.jumpDown = goToPoint.y < me.position.y
         action.aim = aim
