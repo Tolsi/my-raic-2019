@@ -50,6 +50,10 @@ class MyStrategy {
             return game.units.filter { it.playerId != me.playerId }
         }
 
+        public fun notMe(): List<model.Unit> {
+            return game.units.filter { it.id != me.id }
+        }
+
         public inline fun <reified T : model.Item> nearestItemType(): LootBox? {
             return game.lootBoxes.findAmongBy({ it.item is T }, { distanceToMe(it.position).toInt() })
         }
@@ -66,13 +70,13 @@ class MyStrategy {
         // todo стрелять на опережение
         fun isCanHitMyself(target: Point): Boolean {
             val weaponParams = me.weapon!!.params
-            val collisionPoint = Line.createFromPointAimAndSpeed(me.centerPosition().toPoint(), target, weaponParams.bullet.speed).find { p ->
+            val collisionPoint = Line.createFromPointAimAndSpeed(me.centerPosition.toPoint(), target, weaponParams.bullet.speed).find { p ->
                 Global.levelAsRectangles.plus(enemies().map { it.toRectangle() }).any { r -> r.intersects(p.toRectangle(weaponParams.bullet.size)) }
             } ?: return false
             if (weaponParams.explosion?.radius ?: 0.0 > 0) {
                 val explosionRadiusRectangle = collisionPoint.toRectangle(weaponParams.explosion!!.radius)
                 return explosionRadiusRectangle.intersects(me.toRectangle()) &&
-                        !enemies().any { explosionRadiusRectangle.intersects(it.toRectangle()) }
+                        !notMe().any { explosionRadiusRectangle.intersects(it.toRectangle()) }
             }
             return false
         }
@@ -96,7 +100,7 @@ class MyStrategy {
         } else if (me.weapon == null && nearestWeapon != null) {
             nearestWeapon.position
         } else if (targetToUnit != null) {
-             targetToUnit.centerPosition()
+             targetToUnit.topCenterPosition
         } else {
             me.position
         }
@@ -106,12 +110,11 @@ class MyStrategy {
         var aim = Vec2Double(0.0, 0.0)
         var shoot = false
         if (targetToUnit != null) {
-            debug.draw(CustomData.Line(me.centerPosition().toVec2Float(), targetToUnit.centerPosition().toVec2Float(), 0.1f, ColorFloat.Red))
+            debug.draw(CustomData.Line(me.centerPosition.toVec2Float(), targetToUnit.centerPosition.toVec2Float(), 0.1f, ColorFloat.Red))
             aim = Vec2Double(
-                    targetToUnit.centerPosition().x - me.position.x,
-                    targetToUnit.centerPosition().y - me.position.y)
-            shoot = s.isCanShoot() && !s.isCanHitMyself(targetToUnit.centerPosition().toPoint())
-            val u = 0
+                    targetToUnit.centerPosition.x - me.centerPosition.x,
+                    targetToUnit.centerPosition.y - me.centerPosition.y)
+            shoot = s.isCanShoot() && !s.isCanHitMyself(targetToUnit.centerPosition.toPoint())
         }
         var jump = goToPoint.y > me.position.y;
         if (goToPoint.x > me.position.x &&
@@ -172,8 +175,6 @@ fun Vec2Double.toVec2Float(): Vec2Float {
     return Vec2Float(this.x.toFloat(), this.y.toFloat())
 }
 
-fun model.Unit.centerPosition(): Vec2Double = Vec2Double(this.position.x + this.size.x / 2, this.position.y + this.size.y / 2)
-
 fun model.Level.toRectangles(game: Game): Collection<Rectangle> {
     val tiles = this.tiles.mapIndexed { x, line ->
         line.mapIndexed { y, tile ->
@@ -198,5 +199,5 @@ fun Point.toRectangle(size: Double): Rectangle {
 }
 
 fun model.Unit.toRectangle(): Rectangle {
-    return Rectangle(this.position.x - (this.size.x / 2), this.position.y - this.size.y / 2, this.size.x, this.size.y)
+    return Rectangle(this.position.x - this.size.x / 2, this.position.y - this.size.y / 2, this.size.x, this.size.y)
 }

@@ -7,6 +7,8 @@ class Unit {
     var id: Int = 0
     var health: Int = 0
     lateinit var position: model.Vec2Double
+    lateinit var centerPosition: model.Vec2Double
+    lateinit var topCenterPosition: model.Vec2Double
     lateinit var size: model.Vec2Double
     lateinit var jumpState: model.JumpState
     var walkedRight: Boolean = false
@@ -29,6 +31,8 @@ class Unit {
         this.onLadder = onLadder
         this.mines = mines
         this.weapon = weapon
+        this.centerPosition = Vec2Double(this.position.x + this.size.x / 2, this.position.y + this.size.y / 2)
+        this.topCenterPosition = Vec2Double(this.position.x + this.size.x, this.position.y + this.size.y / 2)
     }
     companion object {
         @Throws(java.io.IOException::class)
