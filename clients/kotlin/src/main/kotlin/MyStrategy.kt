@@ -71,7 +71,8 @@ class Situation {
 
     // todo remove after deikstra algo will be realized
     fun isStayOnPlaceLastMoves(n: Int): Boolean {
-        return lastStepsUnits.reversed().take(n).map { it.units.find { it.id == me.id }!!.position }.toSet().size == 1
+        return lastStepsUnits.size >= n &&
+                lastStepsUnits.reversed().take(n).map { it.units.find { it.id == me.id }!!.position }.toSet().size == 1
     }
 
     // todo что будет если я выстрелю сейчас? попаду ли я в себя?

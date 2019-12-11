@@ -1,10 +1,11 @@
 package model
 
+import korma_geom.IPoint
 import util.StreamUtil
 
-class Vec2Double {
-    var x: Double = 0.0
-    var y: Double = 0.0
+class Vec2Double: IPoint {
+    override var x: Double = 0.0
+    override var y: Double = 0.0
     constructor() {}
     constructor(x: Double, y: Double) {
         this.x = x
@@ -45,6 +46,10 @@ class Vec2Double {
 
     override fun toString(): String {
         return "Vec2Double(x=$x, y=$y)"
+    }
+
+    fun add(s: Vec2Double): Vec2Double {
+        return Vec2Double(x + s.x, y + s.y)
     }
 
 }

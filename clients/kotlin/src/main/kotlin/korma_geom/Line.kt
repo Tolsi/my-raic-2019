@@ -24,9 +24,8 @@ data class Line(val from: Point, val to: Point) {
             val speedPoint = aim.copy()
             speedPoint.normalize()
             // by ticks
-            speedPoint.mul(speed/60)
+            speedPoint.mul(speed / 60)
             return Line(from, from.copy().add(speedPoint)).times(150.0).interpolateBy(speedPoint)
-//    next.add(aim.toPoint())
         }
     }
 }

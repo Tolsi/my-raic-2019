@@ -68,6 +68,8 @@ class Bullet : IRectangle {
         }
     }
 
+    fun nextPosition(): Bullet = Bullet(weaponType, unitId, playerId, position.add(velocity), velocity, damage, size, explosionParams)
+
     override val x: Double by lazy { position.x }
     override val y: Double by lazy { position.y }
     override val width: Double by lazy { size }
