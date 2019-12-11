@@ -5,7 +5,7 @@ import Global
 import korma_geom.*
 import model.*
 import model.Unit
-import java.io.OutputStream
+import simulation.WorldSimulation
 
 class GameDataExtension {
     public lateinit var me: model.Unit
@@ -16,9 +16,7 @@ class GameDataExtension {
     constructor() {
         me = Unit()
         game = Game()
-        debug = Debug(object : OutputStream() {
-            override fun write(p0: Int) {}
-        })
+        debug = Debug.Mock
     }
 
     constructor(me: model.Unit, game: Game, debug: Debug) {
@@ -110,7 +108,7 @@ fun model.Level.toRectangles(game: Game): Collection<Rectangle> {
     val tiles = this.tiles.mapIndexed { x, line ->
         line.mapIndexed { y, tile ->
             if (tile == model.Tile.WALL) {
-                Rectangle(x, y, 2, 2)
+                Rectangle(x, y, 1, 1)
             } else null
         }
     }.flatten().filterNotNull()
@@ -127,4 +125,8 @@ fun model.Level.toRectangles(game: Game): Collection<Rectangle> {
 
 fun Point.toRectangleWithCenterInPoint(radius: Double): Rectangle {
     return Rectangle(this.x - radius, this.y - radius, radius * 2, radius * 2)
+}
+
+fun Unit.isStaysOnMe(unit: model.Unit): Boolean {
+    return this.position.y - unit.topCenterPosition.y <= WorldSimulation.EPS
 }
