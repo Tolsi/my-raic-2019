@@ -1,8 +1,9 @@
 package model
 
+import korma_geom.IRectangle
 import util.StreamUtil
 
-class Unit {
+class Unit : IRectangle {
     var playerId: Int = 0
     var id: Int = 0
     var health: Int = 0
@@ -17,6 +18,7 @@ class Unit {
     var onLadder: Boolean = false
     var mines: Int = 0
     var weapon: model.Weapon? = null
+
     constructor() {}
     constructor(playerId: Int, id: Int, health: Int, position: model.Vec2Double, size: model.Vec2Double, jumpState: model.JumpState, walkedRight: Boolean, stand: Boolean, onGround: Boolean, onLadder: Boolean, mines: Int, weapon: model.Weapon?) {
         this.playerId = playerId
@@ -63,6 +65,7 @@ class Unit {
             return result
         }
     }
+
     @Throws(java.io.IOException::class)
     fun writeTo(stream: java.io.OutputStream) {
         StreamUtil.writeInt(stream, playerId)
@@ -84,4 +87,9 @@ class Unit {
             weapon.writeTo(stream)
         }
     }
+
+    override val x: Double by lazy { position.x }
+    override val y: Double by lazy { position.y }
+    override val width: Double by lazy { size.x }
+    override val height: Double by lazy { size.y }
 }

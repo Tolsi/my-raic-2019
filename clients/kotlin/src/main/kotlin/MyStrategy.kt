@@ -79,13 +79,13 @@ class Situation {
     // todo стрелять на опережение
     fun isCanHitMyself(target: Point): Boolean {
         val weaponParams = me.weapon!!.params
-        val collisionPoint = Line.createFromPointAimAndSpeed(me.centerPosition.toPoint(), target, weaponParams.bullet.speed).find { p ->
-            Global.levelAsRectangles.plus(enemies().map { it.toRectangle() }).any { r -> r.intersects(p.toRectangle(weaponParams.bullet.size)) }
-        } ?: return false
         if (weaponParams.explosion?.radius ?: 0.0 > 0) {
-            val explosionRadiusRectangle = collisionPoint.toRectangle(weaponParams.explosion!!.radius)
-            return explosionRadiusRectangle.intersects(me.toRectangle()) &&
-                    !notMe().any { explosionRadiusRectangle.intersects(it.toRectangle()) }
+            val collisionPoint = Line.createFromPointAimAndSpeed(me.centerPosition.toPoint(), target, weaponParams.bullet.speed).find { p ->
+                Global.levelAsRectangles.plus(enemies()).any { r -> r.asRectangle.intersects(p.toRectangleWithCenterInPoint(weaponParams.bullet.size)) }
+            } ?: return false
+            val explosionRadiusRectangle = collisionPoint.toRectangleWithCenterInPoint(weaponParams.explosion!!.radius)
+            return explosionRadiusRectangle.intersects(me.asRectangle) &&
+                    !notMe().any { explosionRadiusRectangle.intersects(it.asRectangle) }
         }
         return false
     }
@@ -201,10 +201,6 @@ fun model.Level.toRectangles(game: Game): Collection<Rectangle> {
     return tiles.plus(field)
 }
 
-fun Point.toRectangle(size: Double): Rectangle {
-    return Rectangle(this.x - size, this.y - size, size * 2, size * 2)
-}
-
-fun model.Unit.toRectangle(): Rectangle {
-    return Rectangle(this.position.x - this.size.x / 2, this.position.y - this.size.y / 2, this.size.x, this.size.y)
+fun Point.toRectangleWithCenterInPoint(radius: Double): Rectangle {
+    return Rectangle(this.x - radius, this.y - radius, radius * 2, radius * 2)
 }

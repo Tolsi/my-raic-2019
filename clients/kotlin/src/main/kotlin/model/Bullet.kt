@@ -1,8 +1,9 @@
 package model
 
+import korma_geom.IRectangle
 import util.StreamUtil
 
-class Bullet {
+class Bullet : IRectangle {
     lateinit var weaponType: model.WeaponType
     var unitId: Int = 0
     var playerId: Int = 0
@@ -11,6 +12,7 @@ class Bullet {
     var damage: Int = 0
     var size: Double = 0.0
     var explosionParams: model.ExplosionParams? = null
+
     constructor() {}
     constructor(weaponType: model.WeaponType, unitId: Int, playerId: Int, position: model.Vec2Double, velocity: model.Vec2Double, damage: Int, size: Double, explosionParams: model.ExplosionParams?) {
         this.weaponType = weaponType
@@ -22,15 +24,16 @@ class Bullet {
         this.size = size
         this.explosionParams = explosionParams
     }
+
     companion object {
         @Throws(java.io.IOException::class)
         fun readFrom(stream: java.io.InputStream): Bullet {
             val result = Bullet()
             when (StreamUtil.readInt(stream)) {
-            0 ->result.weaponType = model.WeaponType.PISTOL
-            1 ->result.weaponType = model.WeaponType.ASSAULT_RIFLE
-            2 ->result.weaponType = model.WeaponType.ROCKET_LAUNCHER
-            else -> throw java.io.IOException("Unexpected discriminant value")
+                0 -> result.weaponType = model.WeaponType.PISTOL
+                1 -> result.weaponType = model.WeaponType.ASSAULT_RIFLE
+                2 -> result.weaponType = model.WeaponType.ROCKET_LAUNCHER
+                else -> throw java.io.IOException("Unexpected discriminant value")
             }
             result.unitId = StreamUtil.readInt(stream)
             result.playerId = StreamUtil.readInt(stream)
@@ -46,6 +49,7 @@ class Bullet {
             return result
         }
     }
+
     @Throws(java.io.IOException::class)
     fun writeTo(stream: java.io.OutputStream) {
         StreamUtil.writeInt(stream, weaponType.discriminant)
@@ -63,4 +67,9 @@ class Bullet {
             explosionParams.writeTo(stream)
         }
     }
+
+    override val x: Double by lazy { position.x }
+    override val y: Double by lazy { position.y }
+    override val width: Double by lazy { size }
+    override val height: Double by lazy { size }
 }

@@ -1,8 +1,8 @@
 package model
 
-import util.StreamUtil
+import korma_geom.IRectangle
 
-class LootBox {
+class LootBox: IRectangle {
     lateinit var position: model.Vec2Double
     lateinit var size: model.Vec2Double
     lateinit var item: model.Item
@@ -28,4 +28,9 @@ class LootBox {
         size.writeTo(stream)
         item.writeTo(stream)
     }
+
+    override val x: Double by lazy { position.x }
+    override val y: Double by lazy { position.y }
+    override val width: Double by lazy { size.x }
+    override val height: Double by lazy { size.y }
 }
