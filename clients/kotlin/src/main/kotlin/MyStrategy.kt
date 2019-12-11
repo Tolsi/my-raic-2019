@@ -6,6 +6,7 @@ object Global {
     var properties: model.Properties = model.Properties()
     var level: model.Level = model.Level()
     var levelAsRectangles: Collection<Rectangle> = emptyList()
+    var startPositions: Map<Int, Point> = emptyMap()
 
     fun init(game: Game) {
         if (!Global.init) {
@@ -13,6 +14,7 @@ object Global {
             properties = game.properties
             levelAsRectangles = level.toRectangles(game)
             init = true
+            startPositions = game.units.map { it.id to it.position.toPoint() }.toMap()
         }
     }
 
@@ -86,6 +88,10 @@ class MyStrategy {
         fun isCanShoot(): Boolean {
             return me.weapon != null && me.weapon!!.fireTimer ?: 0.0 == 0.0
         }
+
+        fun myStartPosition(): Point {
+            return Global.startPositions[me.id]!!
+        }
     }
 
     private val s = Situation()
@@ -98,13 +104,13 @@ class MyStrategy {
         val nearestWeapon: LootBox? = s.nearestItemType<Item.Weapon>()
 
         val goToPoint: Vec2Double = if (me.health < game.properties.unitMaxHealth * 0.45) {
-            s.nearestItemType<Item.HealthPack>()?.position.let { me.position }
+            s.nearestItemType<Item.HealthPack>()?.position.let { s.myStartPosition().toVec2Double() }
         } else if (me.weapon == null && nearestWeapon != null) {
             nearestWeapon.position
         } else if (targetToUnit != null) {
             targetToUnit.topCenterPosition
         } else {
-            me.position
+            s.myStartPosition().toVec2Double()
         }
         debug.draw(CustomData.Line(me.position.toVec2Float(), goToPoint.toVec2Float(), 0.2f, ColorFloat.Green))
 

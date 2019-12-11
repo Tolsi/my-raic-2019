@@ -31,9 +31,14 @@ class Unit {
         this.onLadder = onLadder
         this.mines = mines
         this.weapon = weapon
+        calculateFields()
+    }
+
+    fun calculateFields() {
         this.centerPosition = Vec2Double(this.position.x + this.size.x / 2, this.position.y + this.size.y / 2)
         this.topCenterPosition = Vec2Double(this.position.x + this.size.x, this.position.y + this.size.y / 2)
     }
+
     companion object {
         @Throws(java.io.IOException::class)
         fun readFrom(stream: java.io.InputStream): Unit {
@@ -54,6 +59,7 @@ class Unit {
             } else {
                 result.weapon = null
             }
+            result.calculateFields()
             return result
         }
     }
