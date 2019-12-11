@@ -29,8 +29,13 @@ class LootBox: IRectangle {
         item.writeTo(stream)
     }
 
+    override fun toString(): String {
+        return "LootBox(position=$position, size=$size, item=$item)"
+    }
+
     override val x: Double by lazy { position.x }
     override val y: Double by lazy { position.y }
     override val width: Double by lazy { size.x }
     override val height: Double by lazy { size.y }
+
 }

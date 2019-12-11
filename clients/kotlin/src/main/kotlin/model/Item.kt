@@ -37,6 +37,11 @@ abstract class Item {
             StreamUtil.writeInt(stream, TAG)
             StreamUtil.writeInt(stream, health)
         }
+
+        override fun toString(): String {
+            return "HealthPack(health=$health)"
+        }
+
     }
 
     class Weapon : Item {
@@ -64,6 +69,11 @@ abstract class Item {
             StreamUtil.writeInt(stream, TAG)
             StreamUtil.writeInt(stream, weaponType.discriminant)
         }
+
+        override fun toString(): String {
+            return "Weapon(weaponType=$weaponType)"
+        }
+
     }
 
     class Mine : Item {
@@ -80,5 +90,10 @@ abstract class Item {
         override fun writeTo(stream: java.io.OutputStream) {
             StreamUtil.writeInt(stream, TAG)
         }
+
+        override fun toString(): String {
+            return "Mine()"
+        }
+
     }
 }

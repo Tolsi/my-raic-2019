@@ -65,7 +65,7 @@ class GameDataExtension {
         val weaponParams = me.weapon!!.params
         if (weaponParams.explosion?.radius ?: 0.0 > 0) {
             val collisionPoint = Line.createFromPointAimAndSpeed(me.centerPosition.toPoint(), target, weaponParams.bullet.speed).find { p ->
-                Global.levelAsRectangles.plus(enemies()).any { r -> r.asRectangle.intersects(p.toRectangleWithCenterInPoint(weaponParams.bullet.size)) }
+                Global.wallsAsRectangles.plus(enemies()).any { r -> r.asRectangle.intersects(p.toRectangleWithCenterInPoint(weaponParams.bullet.size)) }
             } ?: return false
             val explosionRadiusRectangle = collisionPoint.toRectangleWithCenterInPoint(weaponParams.explosion!!.radius)
             return explosionRadiusRectangle.intersects(me.asRectangle) &&
@@ -104,10 +104,10 @@ fun Vec2Double.toVec2Float(): Vec2Float {
     return Vec2Float(this.x.toFloat(), this.y.toFloat())
 }
 
-fun model.Level.toRectangles(game: Game): Collection<Rectangle> {
+fun model.Level.tilesToRectangles(game: Game, tile: model.Tile): Collection<Rectangle> {
     val tiles = this.tiles.mapIndexed { x, line ->
         line.mapIndexed { y, tile ->
-            if (tile == model.Tile.WALL) {
+            if (tile == tile) {
                 Rectangle(x, y, 1, 1)
             } else null
         }

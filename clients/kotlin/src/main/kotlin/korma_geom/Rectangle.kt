@@ -17,6 +17,13 @@ val IRectangle.left get() = x
 val IRectangle.top get() = y
 val IRectangle.right get() = x + width
 val IRectangle.bottom get() = y + height
+val IRectangle.points get() = listOf(Point(x, y), Point(x + width, y), Point(x, y + height), Point(x + width, y + height))
+fun Iterable<IPoint>.farPoint(from: IPoint): IPoint? {
+    return this.sortedBy { from.distanceTo(it) }.firstOrNull()
+}
+fun Iterable<IPoint>.closestPoint(from: IPoint): IPoint? {
+    return this.sortedBy { -from.distanceTo(it) }.firstOrNull()
+}
 
 data class Rectangle(
     override var x: Double, override var y: Double,

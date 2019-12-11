@@ -28,4 +28,9 @@ class BulletParams {
         StreamUtil.writeDouble(stream, size)
         StreamUtil.writeInt(stream, damage)
     }
+
+    override fun toString(): String {
+        return "BulletParams(speed=$speed, size=$size, damage=$damage)"
+    }
+
 }

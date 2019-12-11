@@ -24,4 +24,7 @@ class Player {
         StreamUtil.writeInt(stream, id)
         StreamUtil.writeInt(stream, score)
     }
+    fun copyOf(): Player {
+        return Player(id, score)
+    }
 }

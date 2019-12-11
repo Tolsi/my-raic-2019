@@ -1,6 +1,7 @@
 package model
 
 import korma_geom.IRectangle
+import korma_geom.Point
 import util.StreamUtil
 
 class Bullet : IRectangle {
@@ -25,6 +26,10 @@ class Bullet : IRectangle {
         this.explosionParams = explosionParams
     }
 
+    fun copyOf(): Bullet {
+        return Bullet(weaponType, unitId, playerId, position.copyOf(), velocity, damage, size, explosionParams)
+    }
+
     companion object {
         @Throws(java.io.IOException::class)
         fun readFrom(stream: java.io.InputStream): Bullet {
@@ -47,6 +52,14 @@ class Bullet : IRectangle {
                 result.explosionParams = null
             }
             return result
+        }
+
+        fun velocity(aim: Point, speed: Double): Point {
+            val speedPoint = aim.copy()
+            speedPoint.normalize()
+            // by ticks
+            speedPoint.mul(speed / 60)
+            return speedPoint
         }
     }
 

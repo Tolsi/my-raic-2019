@@ -60,4 +60,14 @@ class Mine {
         StreamUtil.writeDouble(stream, triggerRadius)
         explosionParams.writeTo(stream)
     }
+
+    fun copyOf(): Mine {
+        return Mine(playerId, position, size, state, timer, triggerRadius, explosionParams)
+    }
+
+    override fun toString(): String {
+        return "Mine(playerId=$playerId, position=$position, size=$size, state=$state, timer=$timer, triggerRadius=$triggerRadius, explosionParams=$explosionParams)"
+    }
+
+
 }

@@ -62,4 +62,9 @@ class WeaponParams {
             explosion.writeTo(stream)
         }
     }
+
+    override fun toString(): String {
+        return "WeaponParams(magazineSize=$magazineSize, fireRate=$fireRate, reloadTime=$reloadTime, minSpread=$minSpread, maxSpread=$maxSpread, recoil=$recoil, aimSpeed=$aimSpeed, bullet=$bullet, explosion=$explosion)"
+    }
+
 }

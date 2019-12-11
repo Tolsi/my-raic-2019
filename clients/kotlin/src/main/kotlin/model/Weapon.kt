@@ -83,4 +83,9 @@ class Weapon {
             StreamUtil.writeInt(stream, lastFireTick)
         }
     }
+
+    override fun toString(): String {
+        return "Weapon(typ=$typ, params=$params, magazine=$magazine, wasShooting=$wasShooting, spread=$spread, fireTimer=$fireTimer, lastAngle=$lastAngle, lastFireTick=$lastFireTick)"
+    }
+
 }

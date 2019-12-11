@@ -22,6 +22,11 @@ class Game {
         this.mines = mines
         this.lootBoxes = lootBoxes
     }
+
+    fun copyOf(): Game {
+        return Game(currentTick, properties, level, players.copyOf(), units.copyOf(), bullets.copyOf(), mines.copyOf(), lootBoxes.copyOf())
+    }
+
     companion object {
         @Throws(java.io.IOException::class)
         fun readFrom(stream: java.io.InputStream): Game {
@@ -82,5 +87,9 @@ class Game {
         for (lootBoxesElement in lootBoxes) {
             lootBoxesElement.writeTo(stream)
         }
+    }
+
+    override fun toString(): String {
+        return "Game(currentTick=$currentTick, properties=$properties, players=${players.contentToString()}, units=${units.contentToString()}, bullets=${bullets.contentToString()}, mines=${mines.contentToString()}, lootBoxes=${lootBoxes.contentToString()})"
     }
 }

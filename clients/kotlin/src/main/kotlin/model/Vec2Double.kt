@@ -52,4 +52,8 @@ class Vec2Double: IPoint {
         return Vec2Double(x + s.x, y + s.y)
     }
 
+    fun copyOf(): Vec2Double {
+        return Vec2Double(x, y)
+    }
+
 }

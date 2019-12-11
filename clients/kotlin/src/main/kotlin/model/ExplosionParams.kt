@@ -24,4 +24,10 @@ class ExplosionParams {
         StreamUtil.writeDouble(stream, radius)
         StreamUtil.writeInt(stream, damage)
     }
+
+    override fun toString(): String {
+        return "ExplosionParams(radius=$radius, damage=$damage)"
+    }
+
+
 }

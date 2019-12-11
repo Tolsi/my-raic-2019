@@ -5,5 +5,10 @@ enum class Tile private constructor(var discriminant: Int) {
     WALL(1),
     PLATFORM(2),
     LADDER(3),
-    JUMP_PAD(4)
+    JUMP_PAD(4);
+
+    override fun toString(): String{
+        return "Tile(${this.javaClass.simpleName})"
+    }
+
 }

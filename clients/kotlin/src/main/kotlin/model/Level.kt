@@ -41,4 +41,9 @@ class Level {
             }
         }
     }
+
+    override fun toString(): String {
+        return "Level(tiles=${tiles.contentToString()})"
+    }
+
 }

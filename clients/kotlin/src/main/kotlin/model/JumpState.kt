@@ -32,4 +32,12 @@ class JumpState {
         StreamUtil.writeDouble(stream, maxTime)
         StreamUtil.writeBoolean(stream, canCancel)
     }
+    fun copyOf(): JumpState {
+        return JumpState(canJump, speed, maxTime, canCancel)
+    }
+
+    override fun toString(): String {
+        return "JumpState(canJump=$canJump, speed=$speed, maxTime=$maxTime, canCancel=$canCancel)"
+    }
+
 }

@@ -11,4 +11,8 @@ class Debug(private val stream: OutputStream) {
             throw RuntimeException(e)
         }
     }
+
+    companion object {
+        val Mock = Debug(object : OutputStream() {override fun write(p0: Int) {}})
+    }
 }

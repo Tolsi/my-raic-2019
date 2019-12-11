@@ -1,10 +1,15 @@
 package strategies
 
 import Debug
-import extensions.GameDataExtension
+import Global
 import Strategy
+import extensions.GameDataExtension
+import extensions.toPoint
+import extensions.toVec2Double
+import extensions.toVec2Float
+import korma_geom.farPoint
+import korma_geom.points
 import model.*
-import extensions.*
 
 open class MySituativeStrategy: Strategy() {
     private val s = GameDataExtension()
@@ -20,13 +25,18 @@ open class MySituativeStrategy: Strategy() {
         val goToPoint: Vec2Double = if (me.health < game.properties.unitMaxHealth * 0.45) {
             s.nearestItemType<Item.HealthPack>()?.position ?: s.myStartPosition().toVec2Double()
         } else if (me.weapon == null && nearestWeapon != null) {
-            nearestWeapon.position
+            nearestWeapon.points.farPoint(me.position.toPoint())!!.toVec2Double()
         } else if (targetToUnit != null) {
             targetToUnit.topCenterPosition
         } else {
             s.myStartPosition().toVec2Double()
         }
         debug.draw(CustomData.Line(me.position.toVec2Float(), goToPoint.toVec2Float(), 0.2f, ColorFloat.Green))
+
+//        debug level
+//        for (r in Global.levelAsRectangles) {
+//            debug.draw(CustomData.Rect(r.position.toVec2Float(), Vec2Float(r.size.width.toFloat(), r.size.height.toFloat()), ColorFloat.Blue))
+//        }
 
         debug.draw(CustomData.Log("Target pos: $goToPoint"))
         var aim = Vec2Double(0.0, 0.0)
@@ -50,7 +60,7 @@ open class MySituativeStrategy: Strategy() {
         jump = jump || s.isStayOnPlaceLastMoves(5)
 
         val action = UnitAction()
-        action.velocity = goToPoint.x - me.position.x
+        action.velocity = goToPoint.x - me.position.x * Global.properties.unitMaxHorizontalSpeed
         action.jump = jump
         action.jumpDown = goToPoint.y < me.position.y
         action.aim = aim
