@@ -12,6 +12,7 @@ class GameDataExtension {
     public lateinit var game: Game
     public lateinit var debug: Debug
     public val lastStepsUnits: MutableList<Game> = mutableListOf()
+    public var jumpUntil: Int = -1
 
     constructor() {
         me = Unit()
@@ -61,6 +62,7 @@ class GameDataExtension {
     // todo что будет если я выстрелю сейчас? попаду ли я в себя?
     // todo предсказывать движения себя и противка и пуль и смотреть куда стрелять
     // todo стрелять на опережение
+    // todo если у меня больше жизней, чем у врага
     fun isCanHitMyself(target: Point): Boolean {
         val weaponParams = me.weapon!!.params
         if (weaponParams.explosion?.radius ?: 0.0 > 0) {

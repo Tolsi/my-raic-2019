@@ -46,6 +46,8 @@ open class MySituativeStrategy : Strategy() {
 //            debug.draw(CustomData.Rect(r.position.toVec2Float(), Vec2Float(r.size.width.toFloat(), r.size.height.toFloat()), ColorFloat.Blue))
 //        }
 
+        // todo если противник рядом, ставить мину и убегать
+
         debug.draw(CustomData.Log("Target pos: $goToPoint"))
         var aim = Vec2Double(0.0, 0.0)
         var shoot = false
