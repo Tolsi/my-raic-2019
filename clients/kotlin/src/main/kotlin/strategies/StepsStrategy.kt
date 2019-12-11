@@ -25,6 +25,7 @@ abstract class Step {
     }
 }
 
+// todo strategy has one optional of them
 abstract class AimStep: Step()
 abstract class MoveStep: Step()
 abstract class JumpStep: Step()

@@ -117,4 +117,9 @@ class Properties {
         StreamUtil.writeDouble(stream, mineTriggerRadius)
         StreamUtil.writeInt(stream, killScore)
     }
+
+    override fun toString(): String {
+        return "Properties(maxTickCount=$maxTickCount, teamSize=$teamSize, ticksPerSecond=$ticksPerSecond, updatesPerTick=$updatesPerTick, lootBoxSize=$lootBoxSize, unitSize=$unitSize, unitMaxHorizontalSpeed=$unitMaxHorizontalSpeed, unitFallSpeed=$unitFallSpeed, unitJumpTime=$unitJumpTime, unitJumpSpeed=$unitJumpSpeed, jumpPadJumpTime=$jumpPadJumpTime, jumpPadJumpSpeed=$jumpPadJumpSpeed, unitMaxHealth=$unitMaxHealth, healthPackHealth=$healthPackHealth, weaponParams=$weaponParams, mineSize=$mineSize, mineExplosionParams=$mineExplosionParams, minePrepareTime=$minePrepareTime, mineTriggerTime=$mineTriggerTime, mineTriggerRadius=$mineTriggerRadius, killScore=$killScore)"
+    }
+
 }

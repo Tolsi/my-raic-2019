@@ -38,7 +38,7 @@ class Unit : IRectangle {
 
     fun calculateFields() {
         this.centerPosition = Vec2Double(this.position.x + this.size.x / 2, this.position.y + this.size.y / 2)
-        this.topCenterPosition = Vec2Double(this.position.x + this.size.x, this.position.y + this.size.y / 2)
+        this.topCenterPosition = Vec2Double(this.position.x + this.size.x / 2, this.position.y + this.size.y)
     }
 
     companion object {

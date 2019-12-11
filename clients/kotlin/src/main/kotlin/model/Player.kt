@@ -27,4 +27,9 @@ class Player {
     fun copyOf(): Player {
         return Player(id, score)
     }
+
+    override fun toString(): String {
+        return "Player(id=$id, score=$score)"
+    }
+
 }

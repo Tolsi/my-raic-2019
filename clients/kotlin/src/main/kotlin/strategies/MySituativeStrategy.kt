@@ -7,11 +7,12 @@ import extensions.GameDataExtension
 import extensions.toPoint
 import extensions.toVec2Double
 import extensions.toVec2Float
+import korma_geom.distanceTo
 import korma_geom.farPoint
 import korma_geom.points
 import model.*
 
-open class MySituativeStrategy: Strategy() {
+open class MySituativeStrategy : Strategy() {
     private val s = GameDataExtension()
 
     override fun getAction(me: model.Unit, game: Game, debug: Debug): UnitAction {
@@ -21,11 +22,18 @@ open class MySituativeStrategy: Strategy() {
 
         val targetToUnit: model.Unit? = s.nearestEnemy()
         val nearestWeapon: LootBox? = s.nearestItemType<Item.Weapon>()
+        val nearestHealthPack = s.nearestItemType<Item.HealthPack>()
 
         val goToPoint: Vec2Double = if (me.health < game.properties.unitMaxHealth * 0.45) {
-            s.nearestItemType<Item.HealthPack>()?.position ?: s.myStartPosition().toVec2Double()
+            nearestHealthPack?.position ?: s.myStartPosition().toVec2Double()
         } else if (me.weapon == null && nearestWeapon != null) {
             nearestWeapon.points.farPoint(me.position.toPoint())!!.toVec2Double()
+        } else if (nearestHealthPack != null && targetToUnit != null) {
+            if (nearestHealthPack!!.position.distanceTo(me.position) < targetToUnit.position.distanceTo(me.position)) {
+                targetToUnit.topCenterPosition
+            } else {
+                nearestHealthPack!!.position
+            }
         } else if (targetToUnit != null) {
             targetToUnit.topCenterPosition
         } else {
@@ -48,7 +56,7 @@ open class MySituativeStrategy: Strategy() {
                     targetToUnit.centerPosition.y - me.centerPosition.y)
             shoot = s.isCanShoot() && !s.isCanHitMyself(targetToUnit.centerPosition.toPoint())
         }
-        var jump = goToPoint.y > me.position.y;
+        var jump = game.currentTick <= s.jumpUntil || goToPoint.y > me.position.y
         if (goToPoint.x > me.position.x &&
                 game.level.tiles[(me.position.x + 1).toInt()][(me.position.y).toInt()] == Tile.WALL) {
             jump = true
@@ -57,7 +65,10 @@ open class MySituativeStrategy: Strategy() {
                 game.level.tiles[(me.position.x - 1).toInt()][(me.position.y).toInt()] == Tile.WALL) {
             jump = true
         }
-        jump = jump || s.isStayOnPlaceLastMoves(5)
+        if (!jump && s.isStayOnPlaceLastMoves(5)) {
+            jump = true
+            s.jumpUntil = game.currentTick + 10
+        }
 
         val action = UnitAction()
         action.velocity = (goToPoint.x - me.position.x) * Global.properties.unitMaxHorizontalSpeed
