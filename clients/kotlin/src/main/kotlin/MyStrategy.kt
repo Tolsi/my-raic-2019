@@ -21,80 +21,87 @@ object Global {
     public var init: Boolean = false
 }
 
-class MyStrategy {
-    class Situation {
-        public lateinit var me: model.Unit
-        public lateinit var game: Game
-        public lateinit var debug: Debug
-        public val lastStepsUnits: MutableList<Game> = mutableListOf()
 
-        constructor() {
-            me = Unit()
-            game = Game()
-            debug = Debug(object : OutputStream() {
-                override fun write(p0: Int) {}
-            })
-        }
+class Situation {
+    public lateinit var me: model.Unit
+    public lateinit var game: Game
+    public lateinit var debug: Debug
+    public val lastStepsUnits: MutableList<Game> = mutableListOf()
 
-        constructor(me: model.Unit, game: Game, debug: Debug) {
-            update(me, game, debug)
-        }
-
-        fun update(me: model.Unit, game: Game, debug: Debug) {
-            this.me = me
-            this.game = game
-            this.debug = debug
-        }
-
-        public fun nearestEnemy(): model.Unit? {
-            return game.units.findAmongBy({ it.playerId != me.playerId }, { distanceToMe(it.position).toInt() })
-        }
-
-        public fun enemies(): List<model.Unit> {
-            return game.units.filter { it.playerId != me.playerId }
-        }
-
-        public fun notMe(): List<model.Unit> {
-            return game.units.filter { it.id != me.id }
-        }
-
-        public inline fun <reified T : model.Item> nearestItemType(): LootBox? {
-            return game.lootBoxes.findAmongBy({ it.item is T }, { distanceToMe(it.position).toInt() })
-        }
-
-        fun distanceToMe(smtn: Vec2Double): Double = distanceSqr(smtn, me.position)
-
-        // todo remove after deikstra algo will be realized
-        fun isStayOnPlaceLastMoves(n: Int): Boolean {
-            return lastStepsUnits.reversed().take(n).map { it.units.find { it.id == me.id }!!.position }.toSet().size == 1
-        }
-
-        // todo что будет если я выстрелю сейчас? попаду ли я в себя?
-        // todo предсказывать движения себя и противка и пуль и смотреть куда стрелять
-        // todo стрелять на опережение
-        fun isCanHitMyself(target: Point): Boolean {
-            val weaponParams = me.weapon!!.params
-            val collisionPoint = Line.createFromPointAimAndSpeed(me.centerPosition.toPoint(), target, weaponParams.bullet.speed).find { p ->
-                Global.levelAsRectangles.plus(enemies().map { it.toRectangle() }).any { r -> r.intersects(p.toRectangle(weaponParams.bullet.size)) }
-            } ?: return false
-            if (weaponParams.explosion?.radius ?: 0.0 > 0) {
-                val explosionRadiusRectangle = collisionPoint.toRectangle(weaponParams.explosion!!.radius)
-                return explosionRadiusRectangle.intersects(me.toRectangle()) &&
-                        !notMe().any { explosionRadiusRectangle.intersects(it.toRectangle()) }
-            }
-            return false
-        }
-
-        fun isCanShoot(): Boolean {
-            return me.weapon != null && me.weapon!!.fireTimer ?: 0.0 == 0.0
-        }
-
-        fun myStartPosition(): Point {
-            return Global.startPositions[me.id]!!
-        }
+    constructor() {
+        me = Unit()
+        game = Game()
+        debug = Debug(object : OutputStream() {
+            override fun write(p0: Int) {}
+        })
     }
 
+    constructor(me: model.Unit, game: Game, debug: Debug) {
+        update(me, game, debug)
+    }
+
+    fun update(me: model.Unit, game: Game, debug: Debug) {
+        this.me = me
+        this.game = game
+        this.debug = debug
+    }
+
+    public fun nearestEnemy(): model.Unit? {
+        return game.units.findAmongBy({ it.playerId != me.playerId }, { distanceToMe(it.position).toInt() })
+    }
+
+    public fun enemies(): List<model.Unit> {
+        return game.units.filter { it.playerId != me.playerId }
+    }
+
+    public fun notMe(): List<model.Unit> {
+        return game.units.filter { it.id != me.id }
+    }
+
+    public inline fun <reified T : model.Item> nearestItemType(): LootBox? {
+        return game.lootBoxes.findAmongBy({ it.item is T }, { distanceToMe(it.position).toInt() })
+    }
+
+
+    fun distanceSqr(a: Vec2Double, b: Vec2Double): Double {
+        return (a.x - b.x) * (a.x - b.x) + (a.y - b.y) * (a.y - b.y)
+    }
+
+    fun distanceToMe(smtn: Vec2Double): Double = distanceSqr(smtn, me.position)
+
+    // todo remove after deikstra algo will be realized
+    fun isStayOnPlaceLastMoves(n: Int): Boolean {
+        return lastStepsUnits.reversed().take(n).map { it.units.find { it.id == me.id }!!.position }.toSet().size == 1
+    }
+
+    // todo что будет если я выстрелю сейчас? попаду ли я в себя?
+    // todo предсказывать движения себя и противка и пуль и смотреть куда стрелять
+    // todo стрелять на опережение
+    fun isCanHitMyself(target: Point): Boolean {
+        val weaponParams = me.weapon!!.params
+        val collisionPoint = Line.createFromPointAimAndSpeed(me.centerPosition.toPoint(), target, weaponParams.bullet.speed).find { p ->
+            Global.levelAsRectangles.plus(enemies().map { it.toRectangle() }).any { r -> r.intersects(p.toRectangle(weaponParams.bullet.size)) }
+        } ?: return false
+        if (weaponParams.explosion?.radius ?: 0.0 > 0) {
+            val explosionRadiusRectangle = collisionPoint.toRectangle(weaponParams.explosion!!.radius)
+            return explosionRadiusRectangle.intersects(me.toRectangle()) &&
+                    !notMe().any { explosionRadiusRectangle.intersects(it.toRectangle()) }
+        }
+        return false
+    }
+
+    fun isCanShoot(): Boolean {
+        return me.weapon != null && me.weapon!!.fireTimer ?: 0.0 == 0.0
+    }
+
+    fun myStartPosition(): Point {
+        return Global.startPositions[me.id]!!
+    }
+}
+
+class MyStrategy {
     private val s = Situation()
+
     fun getAction(me: model.Unit, game: Game, debug: Debug): UnitAction {
         Global.init(game)
 
@@ -151,14 +158,6 @@ class MyStrategy {
         }
 
         return action
-    }
-
-    companion object {
-        fun distanceSqr(a: Vec2Double, b: Vec2Double): Double {
-            return (a.x - b.x) * (a.x - b.x) + (a.y - b.y) * (a.y - b.y)
-        }
-
-//        public infix fun Vec2Double.to(that: Vec2Double): Vector = Pair(this, that)
     }
 }
 
