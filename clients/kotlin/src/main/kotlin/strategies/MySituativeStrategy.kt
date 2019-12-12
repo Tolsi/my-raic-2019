@@ -42,8 +42,6 @@ open class MySituativeStrategy : Strategy() {
             }
         } else targetToUnit.topCenterPosition ?: s.myStartPosition().toVec2Double()
 
-        // todo если противник рядом, ставить мину и убегать
-
         var aim = Vec2Double(0.0, 0.0)
         var shoot = false
         debug.draw(CustomData.Line(me.centerPosition.toVec2Float(), targetToUnit.centerPosition.toVec2Float(), 0.1f, ColorFloat.Red))
@@ -66,6 +64,19 @@ open class MySituativeStrategy : Strategy() {
             s.jumpUntil = game.currentTick + 10
         }
 
+        var jumpDown = goToPoint.y < me.position.y
+        if (s.lastStepsUnits.isNotEmpty()) {
+            val myLastPosition = s.lastStepsUnits.last().units.find { it.id == me.id }!!.position
+            val tx = me.position.x.toInt()
+            val ty = me.position.y.toInt()
+            val lx = myLastPosition.x.toInt()
+            val ly = myLastPosition.y.toInt()
+            if (game.level.tiles[lx][ly] == Tile.PLATFORM && tx == lx && ty == ly + 1) {
+                jump = false
+                jumpDown = false
+            }
+        }
+
 //        if (nearestWeapon!= null) {
 //            debug.draw(CustomData.Rect(nearestWeapon.position.toVec2Float(), nearestWeapon.size.toVec2Float(), ColorFloat.Green))
 //        }
@@ -75,7 +86,6 @@ open class MySituativeStrategy : Strategy() {
 //        for (r in Global.wallsAsRectangles) {
 //            debug.draw(CustomData.Rect(r.position.toVec2Float(), Vec2Float(r.size.width.toFloat(), r.size.height.toFloat()), ColorFloat.Blue))
 //        }
-
 //        s.debugAllBullets()
 //        targetToUnit?.let {
 //            debug.draw(CustomData.Rect(it.position.toVec2Float(), Vec2Float(0.3f, 0.3f), Color.RED.toColorFloat(0.5f)))
@@ -85,7 +95,7 @@ open class MySituativeStrategy : Strategy() {
         val action = UnitAction()
         action.velocity = (goToPoint.x - me.position.x) * Global.properties.unitMaxHorizontalSpeed
         action.jump = jump
-        action.jumpDown = goToPoint.y < me.position.y
+        action.jumpDown = jumpDown
         action.aim = aim
         action.shoot = shoot
         action.reload = false
