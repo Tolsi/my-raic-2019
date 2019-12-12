@@ -44,6 +44,7 @@ object WorldSimulation {
         val updatedUnit = unit.copyOf()
         updatedUnit.position.x = unit.position.x + action.velocity
         // todo collide jump pad?
+        // todo take bonuses and weapon if allowed
         if (action.jump) {
             if (unit.onLadder) {
                 updatedUnit.jumpState.canCancel = true
@@ -66,9 +67,24 @@ object WorldSimulation {
                     updatedUnit.jumpState.speed = 0.0
                     updatedUnit.jumpState.maxTime -= (Global.properties.unitJumpTime / 60)
                 }
+                // todo падение?
+            }
+        } else {
+            if (unit.onLadder) {
+                updatedUnit.jumpState.canCancel = true
+                updatedUnit.jumpState.canJump = true
+                updatedUnit.jumpState.speed = Global.properties.unitJumpSpeed
+                updatedUnit.jumpState.maxTime = Global.properties.unitJumpTime
+                updatedUnit.onGround = true
+            } else if (unit.onGround) {
+                updatedUnit.jumpState.canCancel = true
+                updatedUnit.jumpState.canJump = false
+                updatedUnit.jumpState.speed = Global.properties.unitJumpSpeed
+                updatedUnit.jumpState.maxTime = Global.properties.unitJumpTime
+                // кто-то стоит на мне
+                updatedUnit.onGround = s.notMe().any { unit.isStaysOnMe(it) }
             }
         }
-        // todo take bonuses and weapon if allowed
         return resultGame
     }
 

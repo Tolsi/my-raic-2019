@@ -6,6 +6,7 @@ import korma_geom.*
 import model.*
 import model.Unit
 import simulation.WorldSimulation
+import java.awt.Color
 
 class GameDataExtension {
     public lateinit var me: model.Unit
@@ -63,17 +64,42 @@ class GameDataExtension {
     // todo предсказывать движения себя и противка и пуль и смотреть куда стрелять
     // todo стрелять на опережение
     // todo если у меня больше жизней, чем у врага
-    fun isCanHitMyself(target: Point): Boolean {
+    fun isCanHitMyselfOrWithEnemies(target: Point): Boolean {
         val weaponParams = me.weapon!!.params
         if (weaponParams.explosion?.radius ?: 0.0 > 0) {
-            val collisionPoint = Line.createFromPointAimAndSpeed(me.centerPosition.toPoint(), target, weaponParams.bullet.speed).find { p ->
-                Global.wallsAsRectangles.plus(enemies()).any { r -> r.asRectangle.intersects(p.toRectangleWithCenterInPoint(weaponParams.bullet.size)) }
+            val myCenterPosition = me.centerPosition.toPoint()
+            val bulletPoints = Line.createFromPointAimAndSpeed(myCenterPosition, target.minus(myCenterPosition).mutable, weaponParams.bullet.speed)
+            val collisionPoint = bulletPoints.find { p ->
+                Global.wallsAsRectangles.plus(enemies()).any { r ->
+                    r.asRectangle.intersects(
+                            p.toRectangleWithCenterInPoint(weaponParams.bullet.size)) }
             } ?: return false
+            // todo remove mult after simulation
+            val explosionRadiusRectangleForMe = collisionPoint.toRectangleWithCenterInPoint(weaponParams.explosion!!.radius * 1.5)
             val explosionRadiusRectangle = collisionPoint.toRectangleWithCenterInPoint(weaponParams.explosion!!.radius)
-            return explosionRadiusRectangle.intersects(me.asRectangle) &&
+            return explosionRadiusRectangleForMe.intersects(me.asRectangle) &&
                     !notMe().any { explosionRadiusRectangle.intersects(it.asRectangle) }
         }
         return false
+    }
+
+    fun debugIfIShootNow(target: Point) {
+        if (me.weapon != null) {
+            val weaponParams = me.weapon!!.params
+            val myCenterPosition = me.centerPosition.toPoint()
+            val bulletPoints = Line.createFromPointAimAndSpeed(myCenterPosition, target.minus(myCenterPosition).mutable, weaponParams.bullet.speed)
+            bulletPoints.forEach { debug.draw(CustomData.Rect(it.toVec2Float(), Vec2Float(0.1f, 0.1f), Color.GRAY.toColorFloat(0.4f))) }
+            val collisionPoint = bulletPoints.find { p ->
+                Global.wallsAsRectangles.plus(enemies()).any { r ->
+                    r.asRectangle.intersects(
+                            p.toRectangleWithCenterInPoint(weaponParams.bullet.size)) }
+            } ?: return
+            debug.draw(CustomData.Rect(collisionPoint.toVec2Float(), Vec2Float(0.5f,0.5f), Color.YELLOW.toColorFloat(0.4f)))
+            val explosionRadiusRectangleForMe = collisionPoint.toRectangleWithCenterInPoint(weaponParams.explosion!!.radius * 1.5)
+            val explosionRadiusRectangle = collisionPoint.toRectangleWithCenterInPoint(weaponParams.explosion!!.radius)
+            debug.draw(CustomData.Rect(explosionRadiusRectangleForMe.position.toVec2Float(), explosionRadiusRectangleForMe.size.toVec2Float(), Color.RED.toColorFloat(0.2f)))
+            debug.draw(CustomData.Rect(explosionRadiusRectangle.position.toVec2Float(), explosionRadiusRectangle.size.toVec2Float(), Color.RED.toColorFloat(0.4f)))
+        }
     }
 
     fun isCanShoot(): Boolean {
@@ -83,6 +109,9 @@ class GameDataExtension {
     fun myStartPosition(): Point {
         return Global.startPositions[me.id]!!
     }
+
+    val myPlayer: Player by lazy { game.players.find { it.id == me.playerId }!! }
+    val enemiesPlayers: List<Player> by lazy { game.players.filter { it.id != me.playerId } }
 }
 
 fun <T> Array<T>.findAmongBy(filter: (T) -> Boolean,
@@ -106,23 +135,35 @@ fun Vec2Double.toVec2Float(): Vec2Float {
     return Vec2Float(this.x.toFloat(), this.y.toFloat())
 }
 
-fun model.Level.tilesToRectangles(game: Game, tile: model.Tile): Collection<Rectangle> {
+fun model.Level.tilesToRectanglesWithBorders(tileType: model.Tile): Collection<Rectangle> {
     val tiles = this.tiles.mapIndexed { x, line ->
         line.mapIndexed { y, tile ->
-            if (tile == tile) {
+            if (tile == tileType) {
                 Rectangle(x, y, 1, 1)
             } else null
         }
     }.flatten().filterNotNull()
 
-    val field = mutableListOf<Rectangle>()
+    val borders = mutableListOf<Rectangle>()
     for (y in -1..Global.level.tiles[0].size + 1) {
-        field.plus(Rectangle(-1, y, 1, 1))
+        borders.plus(Rectangle(-1, y, 1, 1))
     }
     for (x in -1..Global.level.tiles.size + 1) {
-        field.plus(Rectangle(x, -1, 1, 1))
+        borders.plus(Rectangle(x, -1, 1, 1))
     }
-    return tiles.plus(field)
+    return tiles.plus(borders)
+}
+
+fun model.Level.tilesToRectangles(tileType: model.Tile): Collection<Rectangle> {
+    val tiles = this.tiles.mapIndexed { x, line ->
+        line.mapIndexed { y, tile ->
+            if (tile == tileType) {
+                Rectangle(x, y, 1, 1)
+            } else null
+        }
+    }.flatten().filterNotNull()
+
+    return tiles
 }
 
 fun Point.toRectangleWithCenterInPoint(radius: Double): Rectangle {
@@ -132,3 +173,6 @@ fun Point.toRectangleWithCenterInPoint(radius: Double): Rectangle {
 fun Unit.isStaysOnMe(unit: model.Unit): Boolean {
     return this.position.y - unit.topCenterPosition.y <= WorldSimulation.EPS
 }
+
+fun java.awt.Color.toColorFloat(a: Float? = null): ColorFloat = ColorFloat(this.red.toFloat(), this.green.toFloat(), this.blue.toFloat(), a ?: this.alpha.toFloat())
+fun Size.toVec2Float(): Vec2Float = Vec2Float(this.width.toFloat(), this.height.toFloat())

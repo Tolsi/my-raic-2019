@@ -3,14 +3,12 @@ package strategies
 import Debug
 import Global
 import Strategy
-import extensions.GameDataExtension
-import extensions.toPoint
-import extensions.toVec2Double
-import extensions.toVec2Float
+import extensions.*
 import korma_geom.distanceTo
 import korma_geom.farPoint
 import korma_geom.points
 import model.*
+import java.awt.Color
 
 open class MySituativeStrategy : Strategy() {
     private val s = GameDataExtension()
@@ -23,6 +21,8 @@ open class MySituativeStrategy : Strategy() {
         val targetToUnit: model.Unit? = s.nearestEnemy()
         val nearestWeapon: LootBox? = s.nearestItemType<Item.Weapon>()
         val nearestHealthPack = s.nearestItemType<Item.HealthPack>()
+
+//        debug.draw(CustomData.Rect(nearestWeapon.position.toVec2Float(), nearestWeapon.size.toVec2Float(), ColorFloat.Green))
 
         val goToPoint: Vec2Double = if (me.health < game.properties.unitMaxHealth * 0.45) {
             nearestHealthPack?.position ?: s.myStartPosition().toVec2Double()
@@ -44,16 +44,15 @@ open class MySituativeStrategy : Strategy() {
         } else {
             s.myStartPosition().toVec2Double()
         }
-        debug.draw(CustomData.Line(me.position.toVec2Float(), goToPoint.toVec2Float(), 0.2f, ColorFloat.Green))
+//        debug.draw(CustomData.Line(me.position.toVec2Float(), goToPoint.toVec2Float(), 0.2f, ColorFloat.Green))
 
 //        debug level
-//        for (r in Global.levelAsRectangles) {
+//        for (r in Global.wallsAsRectangles) {
 //            debug.draw(CustomData.Rect(r.position.toVec2Float(), Vec2Float(r.size.width.toFloat(), r.size.height.toFloat()), ColorFloat.Blue))
 //        }
 
         // todo если противник рядом, ставить мину и убегать
 
-        debug.draw(CustomData.Log("Target pos: $goToPoint"))
         var aim = Vec2Double(0.0, 0.0)
         var shoot = false
         if (targetToUnit != null) {
@@ -61,8 +60,14 @@ open class MySituativeStrategy : Strategy() {
             aim = Vec2Double(
                     targetToUnit.centerPosition.x - me.centerPosition.x,
                     targetToUnit.centerPosition.y - me.centerPosition.y)
-            shoot = s.isCanShoot() && !s.isCanHitMyself(targetToUnit.centerPosition.toPoint())
+            shoot = s.isCanShoot() && !s.isCanHitMyselfOrWithEnemies(targetToUnit.centerPosition.toPoint())
         }
+
+//        targetToUnit?.let {
+//            debug.draw(CustomData.Rect(it.position.toVec2Float(), Vec2Float(0.3f, 0.3f), Color.RED.toColorFloat(0.5f)))
+//            s.debugIfIShootNow(it.position.toPoint())
+//        }
+
         var jump = game.currentTick <= s.jumpUntil || goToPoint.y > me.position.y
         if (goToPoint.x > me.position.x &&
                 game.level.tiles[(me.position.x + 1).toInt()][(me.position.y).toInt()] == Tile.WALL) {
