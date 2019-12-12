@@ -196,3 +196,4 @@ fun Unit.isStaysOnMe(unit: model.Unit): Boolean {
 
 fun java.awt.Color.toColorFloat(a: Float? = null): ColorFloat = ColorFloat(this.red.toFloat(), this.green.toFloat(), this.blue.toFloat(), a ?: this.alpha.toFloat())
 fun Size.toVec2Float(): Vec2Float = Vec2Float(this.width.toFloat(), this.height.toFloat())
+fun Game.unitById(unitId: Int): Unit = this.units.find { it.id == unitId }!!

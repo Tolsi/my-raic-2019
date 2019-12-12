@@ -58,7 +58,7 @@ class Bullet : IRectangle {
             val speedPoint = aim.copy()
             speedPoint.normalize()
             // by ticks
-            speedPoint.mul(speed / 60)
+            speedPoint.mul(speed)
             return speedPoint
         }
     }
@@ -82,9 +82,14 @@ class Bullet : IRectangle {
     }
 
     fun nextPosition(): Bullet = Bullet(weaponType, unitId, playerId, position.add(velocity), velocity, damage, size, explosionParams)
+    override fun toString(): String {
+        return "Bullet(weaponType=$weaponType, unitId=$unitId, playerId=$playerId, position=$position, velocity=$velocity, damage=$damage, size=$size, explosionParams=$explosionParams)"
+    }
 
     override val x: Double by lazy { position.x }
     override val y: Double by lazy { position.y }
     override val width: Double by lazy { size }
     override val height: Double by lazy { size }
+
+
 }

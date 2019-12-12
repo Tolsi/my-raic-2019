@@ -8,7 +8,7 @@ enum class Tile private constructor(var discriminant: Int) {
     JUMP_PAD(4);
 
     override fun toString(): String{
-        return "Tile(${this.javaClass.simpleName})"
+        return "Tile.${this.name}"
     }
 
 }

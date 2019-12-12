@@ -98,7 +98,7 @@ class Unit : IRectangle {
     }
 
     override fun toString(): String {
-        return "Unit(playerId=$playerId, id=$id, health=$health, position=$position, centerPosition=$centerPosition, topCenterPosition=$topCenterPosition, size=$size, jumpState=$jumpState, walkedRight=$walkedRight, stand=$stand, onGround=$onGround, onLadder=$onLadder, mines=$mines, weapon=$weapon)"
+        return "Unit(playerId=$playerId, id=$id, health=$health, position=$position, size=$size, jumpState=$jumpState, walkedRight=$walkedRight, stand=$stand, onGround=$onGround, onLadder=$onLadder, mines=$mines, weapon=$weapon)"
     }
 
 }

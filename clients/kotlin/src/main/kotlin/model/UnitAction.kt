@@ -23,6 +23,10 @@ class UnitAction {
         this.plantMine = plantMine
     }
     companion object {
+        val Empty = UnitAction()
+        init {
+            Empty.aim = Vec2Double()
+        }
         @Throws(java.io.IOException::class)
         fun readFrom(stream: java.io.InputStream): UnitAction {
             val result = UnitAction()
@@ -52,6 +56,4 @@ class UnitAction {
     override fun toString(): String {
         return "UnitAction(velocity=$velocity, jump=$jump, jumpDown=$jumpDown, aim=$aim, shoot=$shoot, reload=$reload, swapWeapon=$swapWeapon, plantMine=$plantMine)"
     }
-
-
 }

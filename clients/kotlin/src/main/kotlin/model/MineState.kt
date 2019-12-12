@@ -1,7 +1,5 @@
 package model
 
-import util.StreamUtil
-
 enum class MineState private constructor(var discriminant: Int) {
     PREPARING(0),
     IDLE(1),
@@ -9,6 +7,6 @@ enum class MineState private constructor(var discriminant: Int) {
     EXPLODED(3);
 
     override fun toString(): String{
-        return "MineState(${this.javaClass.simpleName})"
+        return "MineState.${this.name}"
     }
 }
