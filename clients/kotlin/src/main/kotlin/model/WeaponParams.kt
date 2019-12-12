@@ -10,6 +10,7 @@ class WeaponParams {
     var maxSpread: Double = 0.0
     var recoil: Double = 0.0
     var aimSpeed: Double = 0.0
+    var aimSpeedPerTick: Double = 0.0
     lateinit var bullet: model.BulletParams
     var explosion: model.ExplosionParams? = null
     constructor() {}
@@ -23,6 +24,7 @@ class WeaponParams {
         this.aimSpeed = aimSpeed
         this.bullet = bullet
         this.explosion = explosion
+        this.aimSpeedPerTick = aimSpeed / 60
     }
     companion object {
         @Throws(java.io.IOException::class)
@@ -41,6 +43,7 @@ class WeaponParams {
             } else {
                 result.explosion = null
             }
+            result.aimSpeedPerTick = result.aimSpeed / 60
             return result
         }
     }

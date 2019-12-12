@@ -10,21 +10,46 @@ class Properties {
     lateinit var lootBoxSize: model.Vec2Double
     lateinit var unitSize: model.Vec2Double
     var unitMaxHorizontalSpeed: Double = 0.0
+    var unitMaxHorizontalSpeedPerTick: Double = 0.0
+//    var unitMaxHorizontalSpeedPerMicroTick: Double = 0.0
     var unitFallSpeed: Double = 0.0
+    var unitFallSpeedPerTick: Double = 0.0
+//    var unitFallSpeedPerMicroTick: Double = 0.0
     var unitJumpTime: Double = 0.0
+    var unitJumpTimePerTick: Double = 0.0
+//    var unitJumpTimePerMicroTick: Double = 0.0
     var unitJumpSpeed: Double = 0.0
+    var unitJumpSpeedPerTick: Double = 0.0
+//    var unitJumpSpeedPerMicroTick: Double = 0.0
     var jumpPadJumpTime: Double = 0.0
+    var jumpPadJumpTimePerTick: Double = 0.0
+//    var jumpPadJumpTimePerMicroTick: Double = 0.0
     var jumpPadJumpSpeed: Double = 0.0
+    var jumpPadJumpSpeedPerTick: Double = 0.0
+//    var jumpPadJumpSpeedPerMicroTick: Double = 0.0
     var unitMaxHealth: Int = 0
     var healthPackHealth: Int = 0
     lateinit var weaponParams: MutableMap<model.WeaponType, model.WeaponParams>
     lateinit var mineSize: model.Vec2Double
     lateinit var mineExplosionParams: model.ExplosionParams
     var minePrepareTime: Double = 0.0
+    var minePrepareTimePerTick: Double = 0.0
+//    var minePrepareTimePerMicroTick: Double = 0.0
     var mineTriggerTime: Double = 0.0
     var mineTriggerRadius: Double = 0.0
     var killScore: Int = 0
     constructor() {}
+
+    fun calculateFields() {
+        this.unitMaxHorizontalSpeedPerTick = unitMaxHorizontalSpeed / 60
+        this.unitFallSpeedPerTick = unitFallSpeed / 60
+        this.unitJumpTimePerTick = unitJumpTime / 60
+        this.unitJumpSpeedPerTick = unitJumpSpeed / 60
+        this.jumpPadJumpTimePerTick = jumpPadJumpTime / 60
+        this.jumpPadJumpSpeedPerTick = jumpPadJumpSpeed / 60
+        this.minePrepareTimePerTick = minePrepareTime / 60
+    }
+
     constructor(maxTickCount: Int, teamSize: Int, ticksPerSecond: Double, updatesPerTick: Int, lootBoxSize: model.Vec2Double, unitSize: model.Vec2Double, unitMaxHorizontalSpeed: Double, unitFallSpeed: Double, unitJumpTime: Double, unitJumpSpeed: Double, jumpPadJumpTime: Double, jumpPadJumpSpeed: Double, unitMaxHealth: Int, healthPackHealth: Int, weaponParams: MutableMap<model.WeaponType, model.WeaponParams>, mineSize: model.Vec2Double, mineExplosionParams: model.ExplosionParams, minePrepareTime: Double, mineTriggerTime: Double, mineTriggerRadius: Double, killScore: Int) {
         this.maxTickCount = maxTickCount
         this.teamSize = teamSize
@@ -47,6 +72,7 @@ class Properties {
         this.mineTriggerTime = mineTriggerTime
         this.mineTriggerRadius = mineTriggerRadius
         this.killScore = killScore
+        calculateFields()
     }
     companion object {
         @Throws(java.io.IOException::class)
@@ -86,6 +112,7 @@ class Properties {
             result.mineTriggerTime = StreamUtil.readDouble(stream)
             result.mineTriggerRadius = StreamUtil.readDouble(stream)
             result.killScore = StreamUtil.readInt(stream)
+            result.calculateFields()
             return result
         }
     }

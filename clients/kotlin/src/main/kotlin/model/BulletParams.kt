@@ -4,6 +4,7 @@ import util.StreamUtil
 
 class BulletParams {
     var speed: Double = 0.0
+    var speedPerTick: Double = 0.0
     var size: Double = 0.0
     var damage: Int = 0
     constructor() {}
@@ -11,6 +12,7 @@ class BulletParams {
         this.speed = speed
         this.size = size
         this.damage = damage
+        this.speedPerTick = speed / 60
     }
     companion object {
         @Throws(java.io.IOException::class)
@@ -19,6 +21,7 @@ class BulletParams {
             result.speed = StreamUtil.readDouble(stream)
             result.size = StreamUtil.readDouble(stream)
             result.damage = StreamUtil.readInt(stream)
+            result.speedPerTick = result.speed / 60
             return result
         }
     }

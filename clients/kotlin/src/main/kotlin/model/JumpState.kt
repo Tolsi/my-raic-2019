@@ -5,6 +5,7 @@ import util.StreamUtil
 class JumpState {
     var canJump: Boolean = false
     var speed: Double = 0.0
+    var speedPerTick: Double = 0.0
     var maxTime: Double = 0.0
     var canCancel: Boolean = false
     constructor() {}
@@ -13,6 +14,7 @@ class JumpState {
         this.speed = speed
         this.maxTime = maxTime
         this.canCancel = canCancel
+        this.speedPerTick = speed / 60
     }
     companion object {
         @Throws(java.io.IOException::class)
@@ -22,6 +24,7 @@ class JumpState {
             result.speed = StreamUtil.readDouble(stream)
             result.maxTime = StreamUtil.readDouble(stream)
             result.canCancel = StreamUtil.readBoolean(stream)
+            result.speedPerTick = result.speed / 60
             return result
         }
     }
