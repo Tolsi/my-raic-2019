@@ -29,10 +29,15 @@ open class MySituativeStrategy : Strategy() {
         } else if (me.weapon == null && nearestWeapon != null) {
             nearestWeapon.points.farPoint(me.position.toPoint())!!.toVec2Double()
         } else if (nearestHealthPack != null && targetToUnit != null) {
-            if (nearestHealthPack!!.position.distanceTo(me.position) < targetToUnit.position.distanceTo(me.position)) {
+            val healthPackCloserToMeThanEnemy =
+                    nearestHealthPack.position.distanceTo(me.position) < targetToUnit.position.distanceTo(me.position)
+            val endOfGameAndILose =
+                    game.currentTick > Global.properties.maxTickCount * 0.7 &&
+                            s.myPlayer.score > s.enemiesPlayers.maxBy { it.score }!!.score
+            if (healthPackCloserToMeThanEnemy || endOfGameAndILose) {
                 targetToUnit.topCenterPosition
             } else {
-                nearestHealthPack!!.position
+                nearestHealthPack.position
             }
         } else if (targetToUnit != null) {
             targetToUnit.topCenterPosition
