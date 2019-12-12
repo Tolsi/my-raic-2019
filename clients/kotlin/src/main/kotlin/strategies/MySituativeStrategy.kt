@@ -34,7 +34,7 @@ open class MySituativeStrategy : Strategy() {
                     nearestHealthPack.position.distanceTo(me.position) < targetToUnit.position.distanceTo(me.position)
             val endOfGameAndILose =
                     game.currentTick > Global.properties.maxTickCount * 0.7 &&
-                            s.myPlayer.score > s.enemiesPlayers.maxBy { it.score }!!.score
+                            s.myPlayer.score <= s.enemiesPlayers.maxBy { it.score }!!.score
             if (healthPackCloserToMeThanEnemy || endOfGameAndILose) {
                 targetToUnit.topCenterPosition
             } else {
