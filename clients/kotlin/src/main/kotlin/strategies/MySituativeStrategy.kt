@@ -8,6 +8,7 @@ import korma_geom.distanceTo
 import korma_geom.farPoint
 import korma_geom.points
 import model.*
+import model.Unit
 import java.awt.Color
 
 open class MySituativeStrategy : Strategy() {
@@ -18,17 +19,17 @@ open class MySituativeStrategy : Strategy() {
 
         s.update(me, game, debug)
 
-        val targetToUnit: model.Unit? = s.nearestEnemy()
+        val targetToUnit: Unit = s.nearestEnemy() ?: return UnitAction()
+        // enemy should be be always
         val nearestWeapon: LootBox? = s.nearestItemType<Item.Weapon>()
         val nearestHealthPack = s.nearestItemType<Item.HealthPack>()
 
-//        debug.draw(CustomData.Rect(nearestWeapon.position.toVec2Float(), nearestWeapon.size.toVec2Float(), ColorFloat.Green))
-
-        val goToPoint: Vec2Double = if (me.health < game.properties.unitMaxHealth * 0.45) {
+        val goToPoint: Vec2Double = if (me.health < game.properties.unitMaxHealth *
+                if (targetToUnit.weapon?.typ == WeaponType.ROCKET_LAUNCHER) 0.8 else 0.45) {
             nearestHealthPack?.position ?: s.myStartPosition().toVec2Double()
         } else if (me.weapon == null && nearestWeapon != null) {
             nearestWeapon.points.farPoint(me.position.toPoint())!!.toVec2Double()
-        } else if (nearestHealthPack != null && targetToUnit != null) {
+        } else if (nearestHealthPack != null) {
             val healthPackCloserToMeThanEnemy =
                     nearestHealthPack.position.distanceTo(me.position) < targetToUnit.position.distanceTo(me.position)
             val endOfGameAndILose =
@@ -39,34 +40,17 @@ open class MySituativeStrategy : Strategy() {
             } else {
                 nearestHealthPack.position
             }
-        } else if (targetToUnit != null) {
-            targetToUnit.topCenterPosition
-        } else {
-            s.myStartPosition().toVec2Double()
-        }
-//        debug.draw(CustomData.Line(me.position.toVec2Float(), goToPoint.toVec2Float(), 0.2f, ColorFloat.Green))
-
-//        debug level
-//        for (r in Global.wallsAsRectangles) {
-//            debug.draw(CustomData.Rect(r.position.toVec2Float(), Vec2Float(r.size.width.toFloat(), r.size.height.toFloat()), ColorFloat.Blue))
-//        }
+        } else targetToUnit.topCenterPosition ?: s.myStartPosition().toVec2Double()
 
         // todo если противник рядом, ставить мину и убегать
 
         var aim = Vec2Double(0.0, 0.0)
         var shoot = false
-        if (targetToUnit != null) {
-            debug.draw(CustomData.Line(me.centerPosition.toVec2Float(), targetToUnit.centerPosition.toVec2Float(), 0.1f, ColorFloat.Red))
-            aim = Vec2Double(
-                    targetToUnit.centerPosition.x - me.centerPosition.x,
-                    targetToUnit.centerPosition.y - me.centerPosition.y)
-            shoot = s.isCanShoot() && !s.isCanHitMyselfOrWithEnemies(targetToUnit.centerPosition.toPoint())
-        }
-
-//        targetToUnit?.let {
-//            debug.draw(CustomData.Rect(it.position.toVec2Float(), Vec2Float(0.3f, 0.3f), Color.RED.toColorFloat(0.5f)))
-//            s.debugIfIShootNow(it.position.toPoint())
-//        }
+        debug.draw(CustomData.Line(me.centerPosition.toVec2Float(), targetToUnit.centerPosition.toVec2Float(), 0.1f, ColorFloat.Red))
+        aim = Vec2Double(
+                targetToUnit.centerPosition.x - me.centerPosition.x,
+                targetToUnit.centerPosition.y - me.centerPosition.y)
+        shoot = s.isCanShoot() && !s.isCanHitMyselfOrWithEnemies(targetToUnit.centerPosition.toPoint())
 
         var jump = game.currentTick <= s.jumpUntil || goToPoint.y > me.position.y
         if (goToPoint.x > me.position.x &&
@@ -81,6 +65,22 @@ open class MySituativeStrategy : Strategy() {
             jump = true
             s.jumpUntil = game.currentTick + 10
         }
+
+//        if (nearestWeapon!= null) {
+//            debug.draw(CustomData.Rect(nearestWeapon.position.toVec2Float(), nearestWeapon.size.toVec2Float(), ColorFloat.Green))
+//        }
+//        line to go to point
+//        debug.draw(CustomData.Line(me.position.toVec2Float(), goToPoint.toVec2Float(), 0.2f, ColorFloat.Green))
+//        debug level
+//        for (r in Global.wallsAsRectangles) {
+//            debug.draw(CustomData.Rect(r.position.toVec2Float(), Vec2Float(r.size.width.toFloat(), r.size.height.toFloat()), ColorFloat.Blue))
+//        }
+
+//        s.debugAllBullets()
+//        targetToUnit?.let {
+//            debug.draw(CustomData.Rect(it.position.toVec2Float(), Vec2Float(0.3f, 0.3f), Color.RED.toColorFloat(0.5f)))
+//            s.debugIfIShootNow(it.position.toPoint())
+//        }
 
         val action = UnitAction()
         action.velocity = (goToPoint.x - me.position.x) * Global.properties.unitMaxHorizontalSpeed

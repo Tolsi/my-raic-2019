@@ -95,10 +95,30 @@ class GameDataExtension {
                             p.toRectangleWithCenterInPoint(weaponParams.bullet.size)) }
             } ?: return
             debug.draw(CustomData.Rect(collisionPoint.toVec2Float(), Vec2Float(0.5f,0.5f), Color.YELLOW.toColorFloat(0.4f)))
-            val explosionRadiusRectangleForMe = collisionPoint.toRectangleWithCenterInPoint(weaponParams.explosion!!.radius * 1.5)
-            val explosionRadiusRectangle = collisionPoint.toRectangleWithCenterInPoint(weaponParams.explosion!!.radius)
-            debug.draw(CustomData.Rect(explosionRadiusRectangleForMe.position.toVec2Float(), explosionRadiusRectangleForMe.size.toVec2Float(), Color.RED.toColorFloat(0.2f)))
-            debug.draw(CustomData.Rect(explosionRadiusRectangle.position.toVec2Float(), explosionRadiusRectangle.size.toVec2Float(), Color.RED.toColorFloat(0.4f)))
+            if (weaponParams.explosion != null) {
+                val explosionRadiusRectangleForMe = collisionPoint.toRectangleWithCenterInPoint(weaponParams.explosion!!.radius * 1.5)
+                val explosionRadiusRectangle = collisionPoint.toRectangleWithCenterInPoint(weaponParams.explosion!!.radius)
+                debug.draw(CustomData.Rect(explosionRadiusRectangleForMe.position.toVec2Float(), explosionRadiusRectangleForMe.size.toVec2Float(), Color.BLUE.toColorFloat(0.2f)))
+                debug.draw(CustomData.Rect(explosionRadiusRectangle.position.toVec2Float(), explosionRadiusRectangle.size.toVec2Float(), Color.RED.toColorFloat(0.4f)))
+            }
+        }
+    }
+
+    fun debugAllBullets() {
+        for (bullet in game.bullets) {
+            val weaponParams = game.properties.weaponParams[bullet.weaponType]!!
+            val bulletPoints = Line.createFromPointAimAndSpeed(bullet.position.toPoint(), bullet.velocity.toPoint(), weaponParams.bullet.speed)
+            bulletPoints.forEach { debug.draw(CustomData.Rect(it.toVec2Float(), Vec2Float(0.1f, 0.1f), Color.GRAY.toColorFloat(0.4f))) }
+            val collisionPoint = bulletPoints.find { p ->
+                Global.wallsAsRectangles.plus(game.units).any { r ->
+                    r.asRectangle.intersects(
+                            p.toRectangleWithCenterInPoint(weaponParams.bullet.size)) }
+            } ?: return
+            debug.draw(CustomData.Rect(collisionPoint.toVec2Float(), Vec2Float(0.5f,0.5f), Color.YELLOW.toColorFloat(0.4f)))
+            if (weaponParams.explosion != null) {
+                val explosionRadiusRectangle = collisionPoint.toRectangleWithCenterInPoint(weaponParams.explosion!!.radius)
+                debug.draw(CustomData.Rect(explosionRadiusRectangle.position.toVec2Float(), explosionRadiusRectangle.size.toVec2Float(), Color.RED.toColorFloat(0.4f)))
+            }
         }
     }
 
