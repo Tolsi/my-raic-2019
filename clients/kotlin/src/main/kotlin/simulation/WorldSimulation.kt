@@ -122,18 +122,7 @@ class WorldSimulation(startGame: Game) {
         }
         updatedUnit.calculateFields()
 
-        var tile = updatedUnit.position.toPoint().onTile()
-        // todo jumpad speed?
-        if (updatedUnit.bottomCenter().onTile() == Tile.WALL ||
-                updatedUnit.bottomCenter().onTile() == Tile.PLATFORM && !action.jumpDown ||
-                updatedUnit.topCenter().onTile() == Tile.WALL) {
-            updatedUnit.position.y = Math.round(updatedUnit.position.y).toDouble()
-        }
-        if (updatedUnit.leftCenter().onTile() == Tile.WALL ||
-                updatedUnit.rightCenter().onTile() == Tile.WALL) {
-            updatedUnit.position.x = Math.round(updatedUnit.position.x).toDouble()
-        }
-
+        val tile = updatedUnit.position.toPoint().onTile()
         // todo Считается, что юнит находится на лестнице, если отрезок от центра юнита до середины нижней границе юнита пересекается с тайлом.
         when (tile) {
             // todo use it?
@@ -158,6 +147,16 @@ class WorldSimulation(startGame: Game) {
                 updatedUnit.jumpState = JumpState.JumpPad
                 // todo ?!
             }
+        }
+
+        if (updatedUnit.bottomCenter().onTile() == Tile.WALL ||
+                updatedUnit.bottomCenter().onTile() == Tile.PLATFORM && !action.jumpDown ||
+                updatedUnit.topCenter().onTile() == Tile.WALL) {
+            updatedUnit.position.y = Math.round(updatedUnit.position.y).toDouble()
+        }
+        if (updatedUnit.leftCenter().onTile() == Tile.WALL ||
+                updatedUnit.rightCenter().onTile() == Tile.WALL) {
+            updatedUnit.position.x = Math.round(updatedUnit.position.x).toDouble() + updatedUnit.size.x / 2
         }
 
         // todo on the ground or ladder remove userFallOnNextTick
