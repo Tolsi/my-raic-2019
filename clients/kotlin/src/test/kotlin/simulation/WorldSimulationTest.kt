@@ -27,6 +27,9 @@ class WorldSimulationTest() {
             assertEquals(correctNextGame.currentTick, newGame.currentTick)
             val calculatedUnit = newGame.unitById(unitId)
 
+            assertTrue(equalsInEPS(calculatedUnit.position.x, correctUnit.position.x))
+            assertTrue(equalsInEPS(calculatedUnit.position.y, correctUnit.position.y))
+
             assertEquals(calculatedUnit.onGround, correctUnit.onGround)
             assertEquals(calculatedUnit.onLadder, correctUnit.onLadder)
             assertEquals(calculatedUnit.jumpState.canCancel, correctUnit.jumpState.canCancel)
@@ -34,8 +37,6 @@ class WorldSimulationTest() {
             assertTrue(equalsInEPS(calculatedUnit.jumpState.maxTime, correctUnit.jumpState.maxTime))
             assertTrue(equalsInEPS(calculatedUnit.jumpState.speed, correctUnit.jumpState.speed))
 
-            assertTrue(equalsInEPS(calculatedUnit.position.x, correctUnit.position.x))
-            assertTrue(equalsInEPS(calculatedUnit.position.y, correctUnit.position.y))
             if (correctUnit.weapon != null) {
                 assertTrue(calculatedUnit.weapon != null)
                 assertEquals(calculatedUnit.weapon!!.typ, correctUnit.weapon!!.typ)

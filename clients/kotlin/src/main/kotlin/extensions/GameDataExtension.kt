@@ -206,8 +206,8 @@ fun Unit.isFalling(): Boolean {
     return this.jumpState == JumpState.Falling
 }
 
-fun Unit.onTile(): Tile {
-    return Global.level.tiles[this.positionInt.x][this.positionInt.y]
+fun Point.onTile(): Tile {
+    return Global.level.tiles[this.x.toInt()][this.y.toInt()]
 }
 
 fun Unit.underMeTile(): Tile {
@@ -216,4 +216,16 @@ fun Unit.underMeTile(): Tile {
 
 fun Unit.upperMeTile(): Tile {
     return Global.level.tiles[this.positionInt.x][this.positionInt.y + 1]
+}
+fun Unit.bottomCenter(): Point {
+    return position.toPoint()
+}
+fun Unit.topCenter(): Point {
+    return Point(x, y + size.y)
+}
+fun Unit.leftCenter(): Point {
+    return Point(x - width / 2, y + size.y / 2)
+}
+fun Unit.rightCenter(): Point {
+    return Point(x + width / 2, y + size.y / 2)
 }

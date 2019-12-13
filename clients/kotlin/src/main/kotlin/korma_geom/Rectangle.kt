@@ -234,4 +234,4 @@ fun Iterable<Rectangle>.bounds(target: Rectangle = Rectangle()): Rectangle {
     return target.setBounds(left, top, right, bottom)
 }
 
-val IRectangle.asRectangle: Rectangle get() = Rectangle(x, y, width, height)
+val IRectangle.asRectangle: Rectangle get() = Rectangle(x - width / 2, y, width, height)

@@ -1,6 +1,8 @@
 package simulation
 
 import extensions.*
+import korma_geom.Point
+import korma_geom.points
 import model.*
 
 class WorldSimulation(startGame: Game) {
@@ -60,7 +62,7 @@ class WorldSimulation(startGame: Game) {
             updatedUnit.weapon!!.fireTimer = updatedUnit.weapon!!.fireTimer!! - unit.weapon!!.params.fireRatePerTick
         }
 
-        updatedUnit.position.x = unit.position.x + action.velocity.coerceIn(-Global.properties.unitMaxHorizontalSpeedPerTick, Global.properties.unitMaxHorizontalSpeedPerTick)
+        updatedUnit.position.x = unit.position.x + (action.velocity.coerceIn(-Global.properties.unitMaxHorizontalSpeedPerTick, Global.properties.unitMaxHorizontalSpeedPerTick))
         // todo collide jump pad?
         // todo take bonuses and weapon if allowed
         val isIFall = unit.isFalling() || userFallOnNextTick.getOrDefault(unit.id, false)
@@ -109,7 +111,7 @@ class WorldSimulation(startGame: Game) {
             } else if (isIFall) {
                 updatedUnit.position.y -= Global.properties.unitFallSpeedPerTick
                 updatedUnit.jumpState = JumpState.Falling
-            } else {
+            } else if (!unit.onGround) {
                 userFallOnNextTick.put(unit.id, true)
                 updatedUnit.position.y += Global.properties.unitJumpSpeedPerTick
                 updatedUnit.jumpState.canCancel = true
@@ -120,53 +122,43 @@ class WorldSimulation(startGame: Game) {
         }
         updatedUnit.calculateFields()
 
-        var tile = updatedUnit.onTile()
-//        val isIAmOnTile = updatedUnit.y - Math.floor(updatedUnit.y) < 0.166666667
-        if (tile != Tile.EMPTY) {
-            val roundX = Math.round(updatedUnit.position.x)
-            val roundY = Math.round(updatedUnit.position.y)
-            // todo jumpad speed?
-            if (Math.abs(updatedUnit.position.y - roundY) < Global.properties.unitJumpSpeedPerTick) {
-                updatedUnit.position.y = roundY.toDouble()
-            }
-            if (Math.abs(updatedUnit.position.x - roundX) < Global.properties.unitMaxHorizontalSpeedPerTick) {
-                updatedUnit.position.x = roundX.toDouble()
-            }
+        var tile = updatedUnit.position.toPoint().onTile()
+        // todo jumpad speed?
+        if (updatedUnit.bottomCenter().onTile() == Tile.WALL ||
+                updatedUnit.bottomCenter().onTile() == Tile.PLATFORM && !action.jumpDown ||
+                updatedUnit.topCenter().onTile() == Tile.WALL) {
+            updatedUnit.position.y = Math.round(updatedUnit.position.y).toDouble()
+        }
+        if (updatedUnit.leftCenter().onTile() == Tile.WALL ||
+                updatedUnit.rightCenter().onTile() == Tile.WALL) {
+            updatedUnit.position.x = Math.round(updatedUnit.position.x).toDouble()
         }
 
-        tile = updatedUnit.onTile()
-//        val isIAmOnTile = updatedUnit.y.rem(1) < 0.166666667
-//        val lastIdontjumpOrCantJump = !((userLastActionAndState[unit.id]?.first?.jumpState?.canJump ?: false) &&
-//                (userLastActionAndState[unit.id]?.second?.jump ?: false))
-//        if (true) {
-            when (tile) {
-                // todo use it?
+        // todo Считается, что юнит находится на лестнице, если отрезок от центра юнита до середины нижней границе юнита пересекается с тайлом.
+        when (tile) {
+            // todo use it?
             Tile.EMPTY -> {
                 updatedUnit.onGround = updatedUnit.y.rem(1) < 0.15 &&
                         (updatedUnit.underMeTile() == Tile.PLATFORM || updatedUnit.underMeTile() == Tile.WALL)
                 updatedUnit.onLadder = false
             }
-                Tile.LADDER -> {
-                    updatedUnit.onGround = true
-                    updatedUnit.onLadder = true
-                    updatedUnit.jumpState = JumpState.Simple
-                }
-                Tile.PLATFORM, Tile.WALL -> {
-                    updatedUnit.onGround = true
-                    updatedUnit.onLadder = false
-                    updatedUnit.jumpState = JumpState.Simple
-                }
-                Tile.JUMP_PAD -> {
-                    updatedUnit.onGround = false
-                    updatedUnit.onLadder = false
-                    updatedUnit.jumpState = JumpState.JumpPad
-                    // todo ?!
-                }
+            Tile.LADDER -> {
+                updatedUnit.onGround = true
+                updatedUnit.onLadder = true
+                updatedUnit.jumpState = JumpState.Simple
             }
-//        } else {
-//            updatedUnit.onGround = false
-//            updatedUnit.onLadder = false
-//        }
+            Tile.PLATFORM, Tile.WALL -> {
+                updatedUnit.onGround = true
+                updatedUnit.onLadder = false
+                updatedUnit.jumpState = JumpState.Simple
+            }
+            Tile.JUMP_PAD -> {
+                updatedUnit.onGround = false
+                updatedUnit.onLadder = false
+                updatedUnit.jumpState = JumpState.JumpPad
+                // todo ?!
+            }
+        }
 
         // todo on the ground or ladder remove userFallOnNextTick
         val unitId = resultGame.units.indexOfFirst { it.id == unit.id }
