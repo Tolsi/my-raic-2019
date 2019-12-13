@@ -217,15 +217,16 @@ fun Unit.underMeTile(): Tile {
 fun Unit.upperMeTile(): Tile {
     return Global.level.tiles[this.positionInt.x][this.positionInt.y + 1]
 }
-fun Unit.bottomCenter(): Point {
-    return position.toPoint()
+fun Unit.bottomSide(): Collection<Point> {
+    return listOf(Point((x - width / 2) + (Global.properties.unitMaxHorizontalSpeedPerTick + WorldSimulation.EPS), y),
+            Point((x + width / 2) - (Global.properties.unitMaxHorizontalSpeedPerTick + WorldSimulation.EPS), y))
 }
-fun Unit.topCenter(): Point {
-    return Point(x, y + size.y)
+fun Unit.topSide(): Collection<Point> {
+    return listOf(Point((x - width / 2) + (Global.properties.unitMaxHorizontalSpeedPerTick + WorldSimulation.EPS), y + height), Point((x + width / 2) - (Global.properties.unitMaxHorizontalSpeedPerTick + WorldSimulation.EPS), y + height))
 }
-fun Unit.leftCenter(): Point {
-    return Point(x - width / 2, y + size.y / 2)
+fun Unit.leftSide(): Collection<Point> {
+    return listOf(Point((x - width / 2), y + (Global.properties.unitMaxHorizontalSpeedPerTick + WorldSimulation.EPS)), Point((x - width / 2), y + height - (Global.properties.unitMaxHorizontalSpeedPerTick + WorldSimulation.EPS)))
 }
-fun Unit.rightCenter(): Point {
-    return Point(x + width / 2, y + size.y / 2)
+fun Unit.rightSide(): Collection<Point> {
+    return listOf(Point((x + width / 2), y + (Global.properties.unitMaxHorizontalSpeedPerTick + WorldSimulation.EPS)), Point((x + width / 2), y + height - (Global.properties.unitMaxHorizontalSpeedPerTick + WorldSimulation.EPS)))
 }

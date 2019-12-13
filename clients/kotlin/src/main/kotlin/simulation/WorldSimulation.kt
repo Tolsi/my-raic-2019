@@ -149,14 +149,15 @@ class WorldSimulation(startGame: Game) {
             }
         }
 
-        if (updatedUnit.bottomCenter().onTile() == Tile.WALL ||
-                updatedUnit.bottomCenter().onTile() == Tile.PLATFORM && !action.jumpDown ||
-                updatedUnit.topCenter().onTile() == Tile.WALL) {
-            updatedUnit.position.y = Math.round(updatedUnit.position.y).toDouble()
-        }
-        if (updatedUnit.leftCenter().onTile() == Tile.WALL ||
-                updatedUnit.rightCenter().onTile() == Tile.WALL) {
+
+        if (updatedUnit.leftSide().any { it.onTile() == Tile.WALL } ||
+                updatedUnit.rightSide().any { it.onTile() == Tile.WALL }) {
             updatedUnit.position.x = Math.round(updatedUnit.position.x).toDouble() + updatedUnit.size.x / 2
+        }
+        if (updatedUnit.bottomSide().any { it.onTile() == Tile.WALL } ||
+                updatedUnit.bottomSide().any { it.onTile() == Tile.PLATFORM } && !action.jumpDown ||
+                updatedUnit.topSide().any { it.onTile() == Tile.WALL }) {
+            updatedUnit.position.y = Math.round(updatedUnit.position.y).toDouble()
         }
 
         // todo on the ground or ladder remove userFallOnNextTick

@@ -18,6 +18,10 @@ open class MySituativeStrategy : Strategy() {
 
         s.update(me, game, debug)
 
+        if (game.units.size != 2) {
+            return UnitAction.Empty
+        }
+
         val targetToUnit: Unit = s.nearestEnemy() ?: return UnitAction()
         // enemy should be be always
         val nearestWeapon: LootBox? = s.nearestItemType<Item.Weapon>()
