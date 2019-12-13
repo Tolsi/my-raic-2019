@@ -7,7 +7,7 @@ import kotlin.test.*
 import org.junit.Test as test
 
 class WorldSimulationTest() {
-    val assertEPS = 2f/6
+    val assertEPS = 1f/6
     fun equalsInEPS(value: Double, correct: Double): Boolean {
         val res = Math.abs(value - correct) <= assertEPS
         return res
@@ -69,7 +69,7 @@ class WorldSimulationTest() {
 //            })
 //                assertEquals(newGame.bullets, correctNextGame.bullets)
             // todo pass newGame?
-            correctNextGame
+            newGame
         }
     }
 }

@@ -1,7 +1,9 @@
 package model
 
+import extensions.toVec2Double
 import korma_geom.IRectangle
 import korma_geom.Point
+import korma_geom.mutable
 import util.StreamUtil
 
 class Bullet : IRectangle {
@@ -81,7 +83,7 @@ class Bullet : IRectangle {
         }
     }
 
-    fun nextPosition(): Bullet = Bullet(weaponType, unitId, playerId, position.add(velocity), velocity, damage, size, explosionParams)
+    fun nextPosition(): Bullet = Bullet(weaponType, unitId, playerId, position.add(velocity.mutable.mul(1.0/60).toVec2Double()), velocity, damage, size, explosionParams)
     override fun toString(): String {
         return "Bullet(weaponType=$weaponType, unitId=$unitId, playerId=$playerId, position=$position, velocity=$velocity, damage=$damage, size=$size, explosionParams=$explosionParams)"
     }
