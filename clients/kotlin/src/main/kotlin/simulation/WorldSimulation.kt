@@ -12,26 +12,27 @@ import model.Vec2Double
 
 class WorldSimulation(startGame: Game) {
     companion object {
-        // 9e-1?
-        val EPS = 9e-1
+        val EPS = 1e-9
     }
-//    fun predictStrategies(): Game {
+
+    //    fun predictStrategies(): Game {
 //        val gameAfterPlayersSteps = gameAfterBulletsCollision.units.fold(gameAfterBulletsCollision) { game, unit ->
 //            userStep(game, unit to unitsStrategies[unit.id]!!.getAction(unit, game, Debug.Mock))
 //        }
 //
 //    }
     var lastGame: Game = startGame
+
     fun tick(unitsSteps: Map<Int, UnitAction>): Game {
         // todo до или после movedBullets?
         val gameAfterPlayersCollision = playersCollisionSteps(lastGame)
 
-        val movedBullets = gameAfterPlayersCollision.bullets.map { it.nextPosition() }
+        val movedBullets = gameAfterPlayersCollision.bullets.map { it.nextPosition() }.toTypedArray()
 
         val gameAfterBulletsCollision = bulletsCollisionSteps(gameAfterPlayersCollision, movedBullets)
 
-        val gameAfterPlayersSteps = gameAfterBulletsCollision.units.fold(gameAfterBulletsCollision) {
-            game, unit -> userStep(game, unit to unitsSteps[unit.id]!! )
+        val gameAfterPlayersSteps = gameAfterBulletsCollision.units.fold(gameAfterBulletsCollision) { game, unit ->
+            userStep(game, unit to unitsSteps[unit.id]!!)
         }
 
         val finalGame = wallsCollisionSteps(gameAfterPlayersSteps)
@@ -41,6 +42,7 @@ class WorldSimulation(startGame: Game) {
     }
 
     private var userBulletOnNextTick: MutableMap<Int, Bullet> = mutableMapOf()
+    private var userFallOnNextTick: MutableMap<Int, Boolean> = mutableMapOf()
 
     fun userStep(game: Game, step: Pair<model.Unit, UnitAction>): Game {
         // create bullet
@@ -54,22 +56,27 @@ class WorldSimulation(startGame: Game) {
             userBulletOnNextTick.remove(unit.id)
         }
         // todo eps or other value?
-        if (action.shoot && unit.weapon != null && unit.weapon?.fireTimer ?: 0.0 < EPS) {
+        val updatedUnit = unit.copyOf()
+
+        if (action.shoot && unit.weapon != null && (unit.weapon?.fireTimer ?: 0.0) - unit.weapon!!.params.fireRatePerTick < 0.0) {
             val newBullet = Bullet(unit.weapon!!.typ, unit.id, unit.playerId, unit.position, Bullet.velocity(action.aim.toPoint(), unit.weapon!!.params.bullet.speed).toVec2Double(), unit.weapon!!.params.bullet.damage, unit.weapon!!.params.bullet.size, unit.weapon!!.params.explosion)
             userBulletOnNextTick.put(unit.id, newBullet)
+        } else if (unit.weapon != null && unit.weapon!!.fireTimer ?: 0.0 > 0.0) {
+            updatedUnit.weapon!!.fireTimer = updatedUnit.weapon!!.fireTimer!! - unit.weapon!!.params.fireRatePerTick
         }
-        // todo move unit
-        val updatedUnit = unit.copyOf()
+
         updatedUnit.position.x = unit.position.x + action.velocity.coerceIn(-Global.properties.unitMaxHorizontalSpeedPerTick, Global.properties.unitMaxHorizontalSpeedPerTick)
         // todo collide jump pad?
         // todo take bonuses and weapon if allowed
-        if (action.jump) {
+        val isIFall = userFallOnNextTick.getOrDefault(unit.id, false)
+        if (action.jump && updatedUnit.jumpState.canJump && !isIFall) {
             if (unit.onLadder) {
                 updatedUnit.position.y += Global.properties.unitJumpSpeedPerTick
                 updatedUnit.jumpState.canCancel = true
                 updatedUnit.jumpState.canJump = true
                 updatedUnit.jumpState.speed = Global.properties.unitJumpSpeed
                 updatedUnit.jumpState.maxTime = Global.properties.unitJumpTime
+                // todo написать onGround и onLadder
                 updatedUnit.onGround = true
             } else if (unit.onGround) {
                 updatedUnit.position.y += Global.properties.unitJumpSpeedPerTick
@@ -78,17 +85,21 @@ class WorldSimulation(startGame: Game) {
                 updatedUnit.jumpState.speed = Global.properties.unitJumpSpeed
                 updatedUnit.jumpState.maxTime = Global.properties.unitJumpTime
                 // todo кто-то стоит на мне или потолок
+                // todo или тут неправильно
                 updatedUnit.onGround = s.notMe().any { unit.isStaysOnMe(it) }
             } else {
                 // todo jump after JUMP_PAD tile
-                if (updatedUnit.jumpState.maxTime > EPS) {
+                if (updatedUnit.jumpState.maxTime - Global.properties.unitJumpTimePerTick > 0) {
                     updatedUnit.jumpState.canCancel = true
-                    updatedUnit.jumpState.canJump = false
-                    updatedUnit.jumpState.speed = 0.0
-                    updatedUnit.position.y -= Global.properties.unitFallSpeedPerTick
+                    updatedUnit.jumpState.canJump = true
+                    updatedUnit.jumpState.speed = Global.properties.unitJumpSpeed
+                    updatedUnit.position.y += Global.properties.unitJumpSpeedPerTick
                     updatedUnit.jumpState.maxTime -= Global.properties.unitJumpTimePerTick
                 } else {
                     updatedUnit.jumpState.maxTime = 0.0
+                    updatedUnit.jumpState.speed = Global.properties.unitFallSpeed
+                    updatedUnit.jumpState.canJump = false
+                    updatedUnit.jumpState.canCancel = false
                     updatedUnit.position.y -= Global.properties.unitFallSpeedPerTick
                 }
             }
@@ -99,6 +110,7 @@ class WorldSimulation(startGame: Game) {
                 updatedUnit.jumpState.speed = Global.properties.unitJumpSpeed
                 updatedUnit.jumpState.maxTime = Global.properties.unitJumpTime
                 updatedUnit.onGround = true
+                updatedUnit.position.y -= Global.properties.unitFallSpeedPerTick
             } else if (unit.onGround) {
                 updatedUnit.jumpState.canCancel = true
                 updatedUnit.jumpState.canJump = false
@@ -106,8 +118,24 @@ class WorldSimulation(startGame: Game) {
                 updatedUnit.jumpState.maxTime = Global.properties.unitJumpTime
                 // кто-то стоит на мне
                 updatedUnit.onGround = s.notMe().any { unit.isStaysOnMe(it) }
+            } else {
+                if (isIFall) {
+                    updatedUnit.position.y -= Global.properties.unitFallSpeedPerTick
+                    updatedUnit.jumpState.canCancel = false
+                    updatedUnit.jumpState.canJump = false
+                    updatedUnit.jumpState.maxTime = 0.0
+                    updatedUnit.jumpState.speed = 0.0
+                } else {
+                    userFallOnNextTick.put(unit.id, true)
+                    updatedUnit.position.y += Global.properties.unitJumpSpeedPerTick
+                    updatedUnit.jumpState.canCancel = true
+                    updatedUnit.jumpState.canJump = true
+                    updatedUnit.jumpState.speed = Global.properties.unitJumpSpeed
+                    updatedUnit.jumpState.maxTime -= Global.properties.unitJumpTimePerTick
+                }
             }
         }
+        // todo on the ground or ladder remove userFallOnNextTick
         val unitId = resultGame.units.indexOfFirst { it.id == unit.id }
         resultGame.units[unitId] = updatedUnit
         return resultGame
@@ -124,12 +152,13 @@ class WorldSimulation(startGame: Game) {
         return game
     }
 
-    fun bulletsCollisionSteps(game: Game, movedBullets: Collection<Bullet>): Game {
+    fun bulletsCollisionSteps(game: Game, movedBullets: Array<Bullet>): Game {
         // todo activate mines
         // todo damage
         // todo die
         // todo count scores?
 //        throw NotImplementedError("TODO")
+        game.bullets = movedBullets
         return game
     }
 }

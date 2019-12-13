@@ -14,23 +14,28 @@ class WorldSimulationTest() {
 
     @test
     fun simulateGame() {
-        val ticks = 77
         val unitId = 4
-        val games = SimulationWorlds.games.take(ticks)
-        val actions = SimulationTestActions.actions.take(ticks)
+        val games = SimulationWorlds.games
+        val actions = SimulationTestActions.actions
         Global.init(games.first())
         val simulation = WorldSimulation(games.first())
-        actions.zip(games.drop(1)).fold(games.first()) { currentGame, actionAndcorrectNextGame ->
-            val (action, correctNextGame) = actionAndcorrectNextGame
+        actions.zip(games.drop(1)).fold(games.first()) { currentGame, (action, correctNextGame) ->
+            val currentUnit = currentGame.unitById(unitId)
+            val correctUnit = correctNextGame.unitById(unitId)
             val newGame = simulation.tick(mapOf(3 to UnitAction.Empty, 4 to action))
 //                for (correctNextGame.units)
             assertEquals(correctNextGame.currentTick, newGame.currentTick)
             val calculatedUnit = newGame.unitById(unitId)
-            val correctUnit = correctNextGame.unitById(unitId)
-            assertTrue(equalsInEPS(calculatedUnit.position.x, correctUnit.position.x))
-            assertTrue(equalsInEPS(calculatedUnit.position.y, correctUnit.position.y))
+
             assertEquals(calculatedUnit.onGround, correctUnit.onGround)
             assertEquals(calculatedUnit.onLadder, correctUnit.onLadder)
+            assertEquals(calculatedUnit.jumpState.canCancel, correctUnit.jumpState.canCancel)
+            assertEquals(calculatedUnit.jumpState.canJump, correctUnit.jumpState.canJump)
+            assertTrue(equalsInEPS(calculatedUnit.jumpState.maxTime, correctUnit.jumpState.maxTime))
+            assertTrue(equalsInEPS(calculatedUnit.jumpState.speed, correctUnit.jumpState.speed))
+
+            assertTrue(equalsInEPS(calculatedUnit.position.x, correctUnit.position.x))
+            assertTrue(equalsInEPS(calculatedUnit.position.y, correctUnit.position.y))
             if (correctUnit.weapon != null) {
                 assertTrue(calculatedUnit.weapon != null)
                 assertEquals(calculatedUnit.weapon!!.typ, correctUnit.weapon!!.typ)

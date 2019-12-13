@@ -5,6 +5,7 @@ import util.StreamUtil
 class WeaponParams {
     var magazineSize: Int = 0
     var fireRate: Double = 0.0
+    var fireRatePerTick: Double = 0.0
     var reloadTime: Double = 0.0
     var minSpread: Double = 0.0
     var maxSpread: Double = 0.0
@@ -25,6 +26,7 @@ class WeaponParams {
         this.bullet = bullet
         this.explosion = explosion
         this.aimSpeedPerTick = aimSpeed / 60
+        this.fireRatePerTick = fireRate / 60
     }
     companion object {
         @Throws(java.io.IOException::class)
@@ -44,6 +46,7 @@ class WeaponParams {
                 result.explosion = null
             }
             result.aimSpeedPerTick = result.aimSpeed / 60
+            result.fireRatePerTick = result.fireRate / 60
             return result
         }
     }

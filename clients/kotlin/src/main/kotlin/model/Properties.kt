@@ -43,9 +43,9 @@ class Properties {
     fun calculateFields() {
         this.unitMaxHorizontalSpeedPerTick = unitMaxHorizontalSpeed / 60
         this.unitFallSpeedPerTick = unitFallSpeed / 60
-        this.unitJumpTimePerTick = unitJumpTime / 60
+        this.unitJumpTimePerTick = unitJumpTime / 33
         this.unitJumpSpeedPerTick = unitJumpSpeed / 60
-        this.jumpPadJumpTimePerTick = jumpPadJumpTime / 60
+        this.jumpPadJumpTimePerTick = jumpPadJumpTime / 33
         this.jumpPadJumpSpeedPerTick = jumpPadJumpSpeed / 60
         this.minePrepareTimePerTick = minePrepareTime / 60
     }
