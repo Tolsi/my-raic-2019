@@ -1,6 +1,9 @@
 package model
 
+import extensions.toPoint
 import korma_geom.IRectangle
+import korma_geom.PointInt
+import korma_geom.int
 import util.StreamUtil
 
 class Unit : IRectangle {
@@ -8,6 +11,7 @@ class Unit : IRectangle {
     var id: Int = 0
     var health: Int = 0
     lateinit var position: model.Vec2Double
+    var positionInt: PointInt = PointInt(0, 0)
     lateinit var centerPosition: model.Vec2Double
     lateinit var topCenterPosition: model.Vec2Double
     lateinit var size: model.Vec2Double
@@ -39,6 +43,7 @@ class Unit : IRectangle {
     fun calculateFields() {
         this.centerPosition = Vec2Double(this.position.x + this.size.x / 2, this.position.y + this.size.y / 2)
         this.topCenterPosition = Vec2Double(this.position.x + this.size.x / 2, this.position.y + this.size.y)
+        this.positionInt = position.toPoint().int
     }
 
     companion object {

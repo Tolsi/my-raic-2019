@@ -9,7 +9,6 @@ import korma_geom.farPoint
 import korma_geom.points
 import model.*
 import model.Unit
-import java.awt.Color
 
 open class MySituativeStrategy : Strategy() {
     private val s = GameDataExtension()
@@ -67,11 +66,10 @@ open class MySituativeStrategy : Strategy() {
         var jumpDown = goToPoint.y < me.position.y
         if (s.lastStepsUnits.isNotEmpty()) {
             val myLastPosition = s.lastStepsUnits.last().units.find { it.id == me.id }!!.position
-            val tx = me.position.x.toInt()
-            val ty = me.position.y.toInt()
-            val lx = myLastPosition.x.toInt()
-            val ly = myLastPosition.y.toInt()
-            if (game.level.tiles[lx][ly] == Tile.PLATFORM && tx == lx && ty == ly + 1) {
+            val myLastXTileIndex = myLastPosition.x.toInt()
+            val myLastYTileIndex = myLastPosition.y.toInt()
+            if (game.level.tiles[myLastXTileIndex][myLastYTileIndex] == Tile.PLATFORM &&
+                    me.positionInt.x == myLastXTileIndex && me.positionInt.y == myLastYTileIndex + 1) {
                 jump = false
                 jumpDown = false
             }

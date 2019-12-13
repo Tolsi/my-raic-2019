@@ -72,7 +72,8 @@ class GameDataExtension {
             val collisionPoint = bulletPoints.find { p ->
                 Global.wallsAsRectangles.plus(enemies()).any { r ->
                     r.asRectangle.intersects(
-                            p.toRectangleWithCenterInPoint(weaponParams.bullet.size)) }
+                            p.toRectangleWithCenterInPoint(weaponParams.bullet.size))
+                }
             } ?: return false
             // todo remove mult after simulation
             val explosionRadiusRectangleForMe = collisionPoint.toRectangleWithCenterInPoint(weaponParams.explosion!!.radius * 1.5)
@@ -92,9 +93,10 @@ class GameDataExtension {
             val collisionPoint = bulletPoints.find { p ->
                 Global.wallsAsRectangles.plus(enemies()).any { r ->
                     r.asRectangle.intersects(
-                            p.toRectangleWithCenterInPoint(weaponParams.bullet.size)) }
+                            p.toRectangleWithCenterInPoint(weaponParams.bullet.size))
+                }
             } ?: return
-            debug.draw(CustomData.Rect(collisionPoint.toVec2Float(), Vec2Float(0.5f,0.5f), Color.YELLOW.toColorFloat(0.4f)))
+            debug.draw(CustomData.Rect(collisionPoint.toVec2Float(), Vec2Float(0.5f, 0.5f), Color.YELLOW.toColorFloat(0.4f)))
             if (weaponParams.explosion != null) {
                 val explosionRadiusRectangleForMe = collisionPoint.toRectangleWithCenterInPoint(weaponParams.explosion!!.radius * 1.5)
                 val explosionRadiusRectangle = collisionPoint.toRectangleWithCenterInPoint(weaponParams.explosion!!.radius)
@@ -112,9 +114,10 @@ class GameDataExtension {
             val collisionPoint = bulletPoints.find { p ->
                 Global.wallsAsRectangles.plus(game.units).any { r ->
                     r.asRectangle.intersects(
-                            p.toRectangleWithCenterInPoint(weaponParams.bullet.size)) }
+                            p.toRectangleWithCenterInPoint(weaponParams.bullet.size))
+                }
             } ?: return
-            debug.draw(CustomData.Rect(collisionPoint.toVec2Float(), Vec2Float(0.5f,0.5f), Color.YELLOW.toColorFloat(0.4f)))
+            debug.draw(CustomData.Rect(collisionPoint.toVec2Float(), Vec2Float(0.5f, 0.5f), Color.YELLOW.toColorFloat(0.4f)))
             if (weaponParams.explosion != null) {
                 val explosionRadiusRectangle = collisionPoint.toRectangleWithCenterInPoint(weaponParams.explosion!!.radius)
                 debug.draw(CustomData.Rect(explosionRadiusRectangle.position.toVec2Float(), explosionRadiusRectangle.size.toVec2Float(), Color.RED.toColorFloat(0.4f)))
@@ -194,6 +197,23 @@ fun Unit.isStaysOnMe(unit: model.Unit): Boolean {
     return this.position.y - unit.topCenterPosition.y <= WorldSimulation.EPS
 }
 
-fun java.awt.Color.toColorFloat(a: Float? = null): ColorFloat = ColorFloat(this.red.toFloat(), this.green.toFloat(), this.blue.toFloat(), a ?: this.alpha.toFloat())
+fun java.awt.Color.toColorFloat(a: Float? = null): ColorFloat = ColorFloat(this.red.toFloat(), this.green.toFloat(), this.blue.toFloat(), a
+        ?: this.alpha.toFloat())
+
 fun Size.toVec2Float(): Vec2Float = Vec2Float(this.width.toFloat(), this.height.toFloat())
 fun Game.unitById(unitId: Int): Unit = this.units.find { it.id == unitId }!!
+fun Unit.isFalling(): Boolean {
+    return this.jumpState == JumpState.Falling
+}
+
+fun Unit.onTile(): Tile {
+    return Global.level.tiles[this.positionInt.x][this.positionInt.y]
+}
+
+fun Unit.underMeTile(): Tile {
+    return Global.level.tiles[this.positionInt.x][this.positionInt.y - 1]
+}
+
+fun Unit.upperMeTile(): Tile {
+    return Global.level.tiles[this.positionInt.x][this.positionInt.y + 1]
+}
