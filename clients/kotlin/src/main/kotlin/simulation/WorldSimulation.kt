@@ -60,16 +60,18 @@ class WorldSimulation {
 //        }
         val updatedUnit = unit.copyOf()
 
-        // todo eps or other value?
-        if (action.shoot && unit.weapon != null && (unit.weapon?.fireTimer
-                        ?: 0.0) - unit.weapon!!.params.fireRatePerTick < 0.0 && unit.weapon!!.magazine > 0) {
+        if (unit.weapon != null && unit.weapon!!.fireTimer ?: 0.0 > 0.0) {
+            updatedUnit.weapon!!.fireTimer = updatedUnit.weapon!!.fireTimer!! - unit.weapon!!.params.fireRatePerTick
+            if (updatedUnit.weapon!!.fireTimer ?: 0.0 < 0.0) {
+                updatedUnit.weapon!!.fireTimer = null
+            }
+        }
+        if (action.shoot && unit.weapon != null && unit.weapon?.fireTimer == null && unit.weapon!!.magazine > 0) {
             val newBullet = Bullet(unit.weapon!!.typ, unit.id, unit.playerId, unit.position, Bullet.velocity(action.aim.toPoint(), unit.weapon!!.params.bullet.speed).toVec2Double(), unit.weapon!!.params.bullet.damage, unit.weapon!!.params.bullet.size, unit.weapon!!.params.explosion)
             unit.weapon!!.lastFireTick = game.currentTick + 1
             unit.weapon!!.magazine -= 1
             resultGame.bullets = resultGame.bullets.plus(newBullet)
 //            userBulletOnNextTick.put(unit.id, newBullet)
-        } else if (unit.weapon != null && unit.weapon!!.fireTimer ?: 0.0 > 0.0) {
-            updatedUnit.weapon!!.fireTimer = updatedUnit.weapon!!.fireTimer!! - unit.weapon!!.params.fireRatePerTick
         }
 
         if (unit.weapon != null && (action.reload || unit.weapon!!.magazine == 0)) {

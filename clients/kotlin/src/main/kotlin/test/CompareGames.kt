@@ -36,7 +36,7 @@ object CompareGames {
 //                result = result && (calculatedUnit.weapon!!.lastAngle == null)
 //            }
             if (correctUnit.weapon!!.fireTimer != null) {
-                result = result && calculatedUnit.weapon != null && Math.abs(calculatedUnit.weapon?.fireTimer!! - correctUnit.weapon?.fireTimer!!) < 0.001
+                result = result && calculatedUnit.weapon != null && Math.abs((calculatedUnit.weapon?.fireTimer ?: 0.0) - (correctUnit.weapon?.fireTimer ?: 0.0)) < 0.001
             } else {
                 result = result && (calculatedUnit.weapon!!.fireTimer == null)
             }
