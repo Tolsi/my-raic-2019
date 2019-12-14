@@ -88,10 +88,14 @@ class Bullet : IRectangle {
         return "Bullet(weaponType=$weaponType, unitId=$unitId, playerId=$playerId, position=$position, velocity=$velocity, damage=$damage, size=$size, explosionParams=$explosionParams)"
     }
 
-    override val x: Double by lazy { position.x }
-    override val y: Double by lazy { position.y }
-    override val width: Double by lazy { size }
-    override val height: Double by lazy { size }
+    override val x: Double
+        get() = position.x - size / 2
+    override val y: Double
+        get() = position.y - size / 2
+    override val width: Double
+        get() = size
+    override val height: Double
+        get() = size
 
 
 }

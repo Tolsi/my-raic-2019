@@ -4,25 +4,70 @@ import Debug
 import Global
 import Strategy
 import extensions.*
+import korma_geom.Point
 import korma_geom.distanceTo
 import korma_geom.farPoint
 import korma_geom.points
 import model.*
 import model.Unit
+import simulation.WorldSimulation
+import java.awt.Color
+
+enum class EnemyType {
+    SmartGuy,
+    FastSmartGuy,
+    FastJumpySmartGuy,
+    Custom,
+    Empty
+}
 
 open class MySituativeStrategy : Strategy() {
     private val s = GameDataExtension()
+
+    private var enemyType: EnemyType = EnemyType.Custom
+    private var enemyPredictionsTypes: MutableMap<Int, Map<EnemyType, List<Point>>> = mutableMapOf()
+    private var enemyPredictedType: MutableMap<Int, EnemyType> = mutableMapOf()
 
     override fun getAction(me: model.Unit, game: Game, debug: Debug): UnitAction {
         Global.init(game)
 
         s.update(me, game, debug)
 
-        if (game.units.size != 2) {
+        if (game.units.size > 2) {
             return UnitAction.Empty
         }
 
-        val targetToUnit: Unit = s.nearestEnemy() ?: return UnitAction()
+        val simSteps = 70
+        if (enemyPredictionsTypes.isEmpty() && enemyPredictedType.isEmpty()) {
+            enemyPredictionsTypes.put(s.enemy().id,
+                    listOf(EnemyType.SmartGuy, EnemyType.FastSmartGuy, EnemyType.FastJumpySmartGuy, EnemyType.Empty).map { type ->
+                        type to s.predictStepsByType(type, simSteps)
+                    }.toMap()
+            )
+        } else {
+            if (enemyPredictedType.isEmpty()) {
+                val typesAndPoints = enemyPredictionsTypes[s.enemy().id]!!
+                val looksLikeStrategies = typesAndPoints.filter { (enemyType, points) ->
+                    val point = points.get(game.currentTick - 1)
+                    debug.draw(CustomData.Rect(point.toVec2Float(), Vec2Float(0.3f, 0.3f), Color.PINK.toColorFloat()))
+                    point.distanceTo(s.enemy().position) < 2
+                }
+                if (looksLikeStrategies.isEmpty()) {
+                    enemyPredictedType.put(s.enemy().id, EnemyType.Custom)
+                    enemyPredictionsTypes.remove(s.enemy().id)
+                } else if (looksLikeStrategies.size == 1) {
+                    enemyPredictedType.put(s.enemy().id, looksLikeStrategies.keys.first())
+                    enemyPredictionsTypes.remove(s.enemy().id)
+                } else if (game.currentTick - 1 >= simSteps) {
+                    enemyPredictedType.put(s.enemy().id, looksLikeStrategies.keys.sortedBy { it.ordinal }.last())
+                    enemyPredictionsTypes.remove(s.enemy().id)
+                } else {
+                    enemyPredictionsTypes.put(s.enemy().id, looksLikeStrategies)
+                }
+            }
+        }
+
+        val targetToUnit: Unit = s.enemy()
         // enemy should be be always
         val nearestWeapon: LootBox? = s.nearestItemType<Item.Weapon>()
         val nearestHealthPack = s.nearestItemType<Item.HealthPack>()
@@ -45,13 +90,13 @@ open class MySituativeStrategy : Strategy() {
             }
         } else targetToUnit.topCenterPosition ?: s.myStartPosition().toVec2Double()
 
-        var aim = Vec2Double(0.0, 0.0)
         var shoot = false
         debug.draw(CustomData.Line(me.centerPosition.toVec2Float(), targetToUnit.centerPosition.toVec2Float(), 0.1f, ColorFloat.Red))
-        aim = Vec2Double(
+        val mayBeAimTo = s.canHitToTarget(enemyPredictedType.getOrDefault(s.enemy().id, EnemyType.SmartGuy))
+        var aim = mayBeAimTo?.let { it.toVec2Double() } ?: Vec2Double(
                 targetToUnit.centerPosition.x - me.centerPosition.x,
                 targetToUnit.centerPosition.y - me.centerPosition.y)
-        shoot = s.isCanShoot() && !s.isCanHitMyselfOrWithEnemies(targetToUnit.centerPosition.toPoint())
+        shoot = s.isCanShoot() && !s.isCanHitMyselfOrWithEnemies(targetToUnit.centerPosition.toPoint()) && mayBeAimTo != null
 
         var jump = game.currentTick <= s.jumpUntil || goToPoint.y > me.position.y
         if (goToPoint.x > me.position.x &&

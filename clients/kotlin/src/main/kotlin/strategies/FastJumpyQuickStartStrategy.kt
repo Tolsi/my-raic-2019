@@ -5,7 +5,9 @@ import Strategy
 import extensions.GameDataExtension
 import model.*
 
-class QuickStartStrategy: Strategy() {
+class FastJumpyQuickStartStrategy: Strategy() {
+    private val s = GameDataExtension()
+
     override fun getAction(unit: model.Unit, game: Game, debug: Debug): UnitAction {
         var nearestEnemy: model.Unit? = null
         for (other in game.units) {
@@ -44,10 +46,23 @@ class QuickStartStrategy: Strategy() {
         if (targetPos.x < unit.position.x && game.level.tiles[(unit.position.x - 1).toInt()][(unit.position.y).toInt()] == Tile.WALL) {
             jump = true
         }
+
+        var jumpDown = targetPos.y < unit.position.y
+        if (s.lastStepsUnits.isNotEmpty()) {
+            val myLastPosition = s.lastStepsUnits.last().units.find { it.id == unit.id }!!.position
+            val myLastXTileIndex = myLastPosition.x.toInt()
+            val myLastYTileIndex = myLastPosition.y.toInt()
+            if (game.level.tiles[myLastXTileIndex][myLastYTileIndex] == Tile.PLATFORM &&
+                    unit.positionInt.x == myLastXTileIndex && unit.positionInt.y == myLastYTileIndex + 1) {
+                jump = false
+                jumpDown = false
+            }
+        }
+
         val action = UnitAction()
-        action.velocity = targetPos.x - unit.position.x
+        action.velocity = (targetPos.x - unit.position.x) * Global.properties.unitMaxHorizontalSpeed
         action.jump = jump
-        action.jumpDown = !jump
+        action.jumpDown = jumpDown
         action.aim = aim
         action.shoot = true
         action.reload = false

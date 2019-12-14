@@ -93,14 +93,18 @@ class Unit : IRectangle {
         }
     }
 
-    override val x: Double by lazy { position.x }
-    override val y: Double by lazy { position.y }
-    override val width: Double by lazy { size.x }
-    override val height: Double by lazy { size.y }
-
     fun copyOf(): model.Unit {
         return model.Unit(playerId, id, health, position.copyOf(), size, jumpState.copyOf(), walkedRight, stand, onGround, onLadder, mines, weapon)
     }
+
+    override val x: Double
+        get() = position.x - width / 2
+    override val y: Double
+        get() = position.y
+    override val width: Double
+        get() = size.x
+    override val height: Double
+        get() = size.y
 
     override fun toString(): String {
         return "Unit(playerId=$playerId, id=$id, health=$health, position=$position, size=$size, jumpState=$jumpState, walkedRight=$walkedRight, stand=$stand, onGround=$onGround, onLadder=$onLadder, mines=$mines, weapon=$weapon)"

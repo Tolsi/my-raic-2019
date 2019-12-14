@@ -1,14 +1,18 @@
 package simulation
 
 import extensions.*
-import korma_geom.Point
-import korma_geom.asRectangle
-import korma_geom.points
+import korma_geom.*
 import model.*
 
-class WorldSimulation(startGame: Game) {
+class WorldSimulation {
     companion object {
         val EPS = 1e-9
+    }
+
+    constructor() {}
+
+    constructor(startGame: Game) {
+        this.lastGame = startGame
     }
 
     //    fun predictStrategies(): Game {
@@ -17,8 +21,8 @@ class WorldSimulation(startGame: Game) {
 //        }
 //
 //    }
-    private var lastGame: Game = startGame
-    private var userBulletOnNextTick: MutableMap<Int, Bullet> = mutableMapOf()
+    lateinit var lastGame: Game
+//    private var userBulletOnNextTick: MutableMap<Int, Bullet> = mutableMapOf()
     private var userFallOnNextTick: MutableMap<Int, Boolean> = mutableMapOf()
     private var userLastActionAndState: MutableMap<Int, Pair<model.Unit, UnitAction>> = mutableMapOf()
 
@@ -30,9 +34,10 @@ class WorldSimulation(startGame: Game) {
 
         val gameAfterBulletsCollision = bulletsCollisionSteps(gameAfterPlayersCollision, movedBullets)
 
-        val gameAfterPlayersSteps = gameAfterBulletsCollision.units.fold(gameAfterBulletsCollision) { game, unit ->
-            userStep(game, unit to unitsSteps[unit.id]!!)
-        }
+        val gameAfterPlayersSteps = gameAfterBulletsCollision.units.filter { unitsSteps.containsKey(it.id) }
+                .fold(gameAfterBulletsCollision) { game, unit ->
+                    userStep(game, unit to unitsSteps[unit.id]!!)
+                }
 
         val finalGame = wallsCollisionSteps(gameAfterPlayersSteps)
         finalGame.currentTick += 1
@@ -46,24 +51,34 @@ class WorldSimulation(startGame: Game) {
         // todo on the next tick!
         val resultGame = game.copyOf()
         val (unit, action) = step
+        action.calculateFields()
         val s = GameDataExtension(unit, game, Debug.Mock)
 
-        userBulletOnNextTick.get(unit.id)?.let {
-            resultGame.bullets = resultGame.bullets.plus(it.nextPosition())
-            userBulletOnNextTick.remove(unit.id)
-        }
-        // todo eps or other value?
+//        userBulletOnNextTick.get(unit.id)?.let {
+//            resultGame.bullets = resultGame.bullets.plus(it.nextPosition())
+//            userBulletOnNextTick.remove(unit.id)
+//        }
         val updatedUnit = unit.copyOf()
 
+        // todo eps or other value?
         if (action.shoot && unit.weapon != null && (unit.weapon?.fireTimer
-                        ?: 0.0) - unit.weapon!!.params.fireRatePerTick < 0.0) {
+                        ?: 0.0) - unit.weapon!!.params.fireRatePerTick < 0.0 && unit.weapon!!.magazine > 0) {
             val newBullet = Bullet(unit.weapon!!.typ, unit.id, unit.playerId, unit.position, Bullet.velocity(action.aim.toPoint(), unit.weapon!!.params.bullet.speed).toVec2Double(), unit.weapon!!.params.bullet.damage, unit.weapon!!.params.bullet.size, unit.weapon!!.params.explosion)
-            userBulletOnNextTick.put(unit.id, newBullet)
+            unit.weapon!!.lastFireTick = game.currentTick + 1
+            unit.weapon!!.magazine -= 1
+            resultGame.bullets = resultGame.bullets.plus(newBullet)
+//            userBulletOnNextTick.put(unit.id, newBullet)
         } else if (unit.weapon != null && unit.weapon!!.fireTimer ?: 0.0 > 0.0) {
             updatedUnit.weapon!!.fireTimer = updatedUnit.weapon!!.fireTimer!! - unit.weapon!!.params.fireRatePerTick
         }
 
-        updatedUnit.position.x = unit.position.x + (action.velocity.coerceIn(-Global.properties.unitMaxHorizontalSpeedPerTick, Global.properties.unitMaxHorizontalSpeedPerTick))
+        if (unit.weapon != null && (action.reload || unit.weapon!!.magazine == 0)) {
+            updatedUnit.weapon!!.fireTimer = unit.weapon!!.params.reloadTime
+            unit.weapon!!.magazine = unit.weapon!!.params.magazineSize
+        }
+
+        val reducedVelocity = action.velocityPerTick.coerceIn(-Global.properties.unitMaxHorizontalSpeedPerTick, Global.properties.unitMaxHorizontalSpeedPerTick)
+        updatedUnit.position.x = unit.position.x + reducedVelocity
         // todo collide jump pad?
         // todo take bonuses and weapon if allowed
         val isIFall = unit.isFalling() || userFallOnNextTick.getOrDefault(unit.id, false)
@@ -95,10 +110,12 @@ class WorldSimulation(startGame: Game) {
             // todo Считается, что юнит находится на лестнице, если отрезок от центра юнита до середины нижней границе юнита пересекается с тайлом.
             // todo 208 step! если часто вверх и вниз, то что-то не так
             if (unit.onLadder && !isIFall) {
-                userFallOnNextTick.put(unit.id, true)
+                if (unit.bottomSide().any { it.onTile() != Tile.WALL }) {
+                    userFallOnNextTick.put(unit.id, true)
+                    updatedUnit.position.y += Global.properties.unitFallSpeedPerTick
+                }
                 updatedUnit.jumpState = JumpState.Simple
                 updatedUnit.onGround = true
-                updatedUnit.position.y += Global.properties.unitFallSpeedPerTick
             } else if (unit.onLadder && isIFall) {
                 updatedUnit.jumpState = JumpState.Simple
                 updatedUnit.onGround = true
@@ -115,45 +132,111 @@ class WorldSimulation(startGame: Game) {
                 updatedUnit.jumpState.maxTime -= Global.properties.unitJumpTimePerTick
             }
         }
+
         updatedUnit.calculateFields()
 
-        val tile = updatedUnit.position.toPoint().onTile()
-        when (tile) {
-            Tile.EMPTY -> {
-                updatedUnit.onGround = updatedUnit.y.rem(1) < 0.15 &&
-                        (updatedUnit.underMeTile() == Tile.PLATFORM || updatedUnit.underMeTile() == Tile.WALL)
-                updatedUnit.onLadder = false
-            }
-            Tile.LADDER -> {
-                userFallOnNextTick.remove(unit.id)
-                updatedUnit.onGround = true
-                updatedUnit.onLadder = true
-                updatedUnit.jumpState = JumpState.Simple
-            }
-            Tile.PLATFORM, Tile.WALL -> {
-                userFallOnNextTick.remove(unit.id)
-                updatedUnit.onGround = true
-                updatedUnit.onLadder = false
-                updatedUnit.jumpState = JumpState.Simple
-            }
-            Tile.JUMP_PAD -> {
-                // todo jump after JUMP_PAD tile
-                userFallOnNextTick.remove(unit.id)
-                updatedUnit.onGround = false
-                updatedUnit.onLadder = false
-                updatedUnit.jumpState = JumpState.JumpPad
-            }
+        // collide with unit
+        val collideLeft = s.notMe().find { enemy -> updatedUnit.leftSide().any { enemy.asRectangle.contains(it) } }
+        if (collideLeft != null) {
+            updatedUnit.position.x = collideLeft.right + updatedUnit.size.x / 2 + EPS
+        }
+        val collideRight = s.notMe().find { enemy -> updatedUnit.rightSide().any { enemy.asRectangle.contains(it) } }
+        if (collideRight != null) {
+            updatedUnit.position.x = collideRight.left - updatedUnit.size.x / 2 - EPS
+        }
+        val collideUp = s.notMe().find { enemy -> updatedUnit.topSide().any { enemy.asRectangle.contains(it) } }
+        if (collideUp != null) {
+            updatedUnit.position.y = collideUp.bottom - updatedUnit.size.y - EPS
+        }
+        val collideDown = s.notMe().find { enemy -> updatedUnit.bottomSide().any { enemy.asRectangle.contains(it) } }
+        if (collideDown != null) {
+            updatedUnit.position.y = collideDown.top + EPS
         }
 
+        updatedUnit.calculateFields()
 
         if (updatedUnit.leftSide().any { it.onTile() == Tile.WALL } ||
                 updatedUnit.rightSide().any { it.onTile() == Tile.WALL }) {
-            updatedUnit.position.x = Math.round(updatedUnit.position.x).toDouble() + updatedUnit.size.x / 2
+            updatedUnit.position.x = Math.round(updatedUnit.position.x).toDouble() + updatedUnit.size.x / 2 + EPS
         }
         if (updatedUnit.bottomSide().any { it.onTile() == Tile.WALL } ||
                 updatedUnit.bottomSide().any { it.onTile() == Tile.PLATFORM } && !action.jumpDown ||
                 updatedUnit.topSide().any { it.onTile() == Tile.WALL }) {
-            updatedUnit.position.y = Math.round(updatedUnit.position.y).toDouble()
+            updatedUnit.position.y = Math.round(updatedUnit.position.y).toDouble() + EPS
+        }
+
+        updatedUnit.calculateFields()
+
+        // todo fix onGround!!!1
+        val underTile = updatedUnit.underMeTile()
+        if (updatedUnit.bottomSide().any { it.y.rem(1) < 1f/6 }) {
+            when (underTile) {
+                Tile.PLATFORM, Tile.WALL -> {
+                    userFallOnNextTick.remove(unit.id)
+                    updatedUnit.onGround = true
+                    updatedUnit.onLadder = false
+                    updatedUnit.jumpState = JumpState.Simple
+                }
+                Tile.JUMP_PAD -> {
+                    // todo jump after JUMP_PAD tile
+                    userFallOnNextTick.remove(unit.id)
+                    updatedUnit.onGround = false
+                    updatedUnit.onLadder = false
+                    updatedUnit.jumpState = JumpState.JumpPad
+                }
+                Tile.LADDER -> {
+                    updatedUnit.onGround = true
+                }
+                else -> {
+                    updatedUnit.onGround = false
+                    updatedUnit.onLadder = false
+                }
+            }
+        }
+
+        if (updatedUnit.bottomSide().any { it.onTile() == Tile.WALL } ) {
+            updatedUnit.onGround = true
+            updatedUnit.onLadder = false
+        } else  if (updatedUnit.centerAndBootom().any { p -> Global.laddersAsRectangles.any { it.contains(p) } }) {
+            userFallOnNextTick.remove(unit.id)
+            updatedUnit.onGround = true
+            updatedUnit.onLadder = true
+            updatedUnit.jumpState = JumpState.Simple
+        } else {
+            updatedUnit.onLadder = false
+        }
+
+        game.lootBoxes.filter {
+            it.asRectangle.intersects(updatedUnit.asRectangle)
+        }.forEach { collidedLootBox ->
+            val wasUsed = when (collidedLootBox.item) {
+                is Item.HealthPack -> {
+                    val isNotFull = updatedUnit.health < Global.properties.unitMaxHealth
+                    if (updatedUnit.health < Global.properties.unitMaxHealth) {
+                        val healthPack = collidedLootBox.item as Item.HealthPack
+                        updatedUnit.health += healthPack.health
+                    }
+                    isNotFull
+                }
+                is Item.Weapon -> {
+                    val swapOrEmpty = action.swapWeapon || unit.weapon == null
+                    if (swapOrEmpty) {
+                        val weapon = collidedLootBox.item as Item.Weapon
+                        val weaponParams = Global.properties.weaponParams[weapon.weaponType]!!
+                        // todo spread?
+                        updatedUnit.weapon = Weapon(weapon.weaponType, weaponParams, weaponParams.magazineSize, false, 0.0, weaponParams.reloadTime, null, null)
+                    }
+                    swapOrEmpty
+                }
+                is Item.Mine -> {
+                    updatedUnit.mines += 1
+                    true
+                }
+                else -> false
+            }
+            if (wasUsed) {
+                resultGame.lootBoxes = resultGame.lootBoxes.filter { !collidedLootBox.equals(it) }.toTypedArray()
+            }
         }
 
         val unitId = resultGame.units.indexOfFirst { it.id == unit.id }
@@ -177,7 +260,6 @@ class WorldSimulation(startGame: Game) {
         // todo damage
         // todo die
         // todo count scores?
-//        throw NotImplementedError("TODO")
         game.bullets = movedBullets.filter { bullet ->
             bullet.x >= 0 && bullet.x <= Global.level.tiles.size &&
                     bullet.y >= 0 && bullet.y <= Global.level.tiles[0].size &&

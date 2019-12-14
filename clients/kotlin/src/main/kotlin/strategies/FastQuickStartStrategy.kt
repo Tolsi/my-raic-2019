@@ -5,7 +5,7 @@ import Strategy
 import extensions.GameDataExtension
 import model.*
 
-class QuickStartStrategy: Strategy() {
+class FastQuickStartStrategy: Strategy() {
     override fun getAction(unit: model.Unit, game: Game, debug: Debug): UnitAction {
         var nearestEnemy: model.Unit? = null
         for (other in game.units) {
@@ -45,7 +45,7 @@ class QuickStartStrategy: Strategy() {
             jump = true
         }
         val action = UnitAction()
-        action.velocity = targetPos.x - unit.position.x
+        action.velocity = (targetPos.x - unit.position.x) * Global.properties.unitMaxHorizontalSpeed
         action.jump = jump
         action.jumpDown = !jump
         action.aim = aim

@@ -1,9 +1,12 @@
 package model
 
+import extensions.toPoint
+import korma_geom.int
 import util.StreamUtil
 
 class UnitAction {
     var velocity: Double = 0.0
+    var velocityPerTick: Double = 0.0
     var jump: Boolean = false
     var jumpDown: Boolean = false
     lateinit var aim: model.Vec2Double
@@ -12,6 +15,10 @@ class UnitAction {
     var swapWeapon: Boolean = false
     var plantMine: Boolean = false
     constructor() {}
+
+    fun calculateFields() {
+        this.velocityPerTick = velocity / 60
+    }
     constructor(velocity: Double, jump: Boolean, jumpDown: Boolean, aim: model.Vec2Double, shoot: Boolean, reload: Boolean, swapWeapon: Boolean, plantMine: Boolean) {
         this.velocity = velocity
         this.jump = jump
@@ -21,6 +28,7 @@ class UnitAction {
         this.reload = reload
         this.swapWeapon = swapWeapon
         this.plantMine = plantMine
+        calculateFields()
     }
     companion object {
         val Empty = UnitAction()
@@ -38,6 +46,8 @@ class UnitAction {
             result.reload = StreamUtil.readBoolean(stream)
             result.swapWeapon = StreamUtil.readBoolean(stream)
             result.plantMine = StreamUtil.readBoolean(stream)
+            result.velocityPerTick = result.velocity / 60
+            result.calculateFields()
             return result
         }
     }

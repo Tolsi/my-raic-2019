@@ -42,6 +42,22 @@ abstract class Item {
             return "HealthPack(health=$health)"
         }
 
+        override fun equals(other: Any?): Boolean {
+            if (this === other) return true
+            if (javaClass != other?.javaClass) return false
+
+            other as HealthPack
+
+            if (health != other.health) return false
+
+            return true
+        }
+
+        override fun hashCode(): Int {
+            return health
+        }
+
+
     }
 
     class Weapon : Item {
@@ -74,6 +90,22 @@ abstract class Item {
             return "Weapon(weaponType=$weaponType)"
         }
 
+        override fun equals(other: Any?): Boolean {
+            if (this === other) return true
+            if (javaClass != other?.javaClass) return false
+
+            other as Weapon
+
+            if (weaponType != other.weaponType) return false
+
+            return true
+        }
+
+        override fun hashCode(): Int {
+            return weaponType.hashCode()
+        }
+
+
     }
 
     class Mine : Item {
@@ -94,6 +126,17 @@ abstract class Item {
         override fun toString(): String {
             return "Mine()"
         }
+
+        override fun equals(other: Any?): Boolean {
+            if (this === other) return true
+            if (javaClass != other?.javaClass) return false
+            return true
+        }
+
+        override fun hashCode(): Int {
+            return javaClass.hashCode()
+        }
+
 
     }
 }

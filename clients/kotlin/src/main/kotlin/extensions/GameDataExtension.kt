@@ -6,6 +6,7 @@ import korma_geom.*
 import model.*
 import model.Unit
 import simulation.WorldSimulation
+import strategies.*
 import java.awt.Color
 
 class GameDataExtension {
@@ -135,6 +136,34 @@ class GameDataExtension {
 
     val myPlayer: Player by lazy { game.players.find { it.id == me.playerId }!! }
     val enemiesPlayers: List<Player> by lazy { game.players.filter { it.id != me.playerId } }
+    val enemyId: Int by lazy { game.units.find { me.id != it.id }!!.id }
+    fun enemy(): model.Unit { return game.units.find { me.id != it.id }!! }
+
+    fun predictStepsByType(enemyType: EnemyType, steps: Int): List<Point> {
+        return predictGamesByType(enemyType, steps).map { it.unitById(enemyId).position.toPoint() }
+    }
+
+    fun predictGamesByType(enemyType: EnemyType, steps: Int): List<Game> {
+        val sim = WorldSimulation(game)
+        val enemyStrategy = when (enemyType) {
+            EnemyType.SmartGuy -> QuickStartStrategy()
+            EnemyType.FastSmartGuy -> FastQuickStartStrategy()
+            EnemyType.FastJumpySmartGuy -> FastJumpyQuickStartStrategy()
+            EnemyType.Empty -> EmptyStrategy()
+            EnemyType.Custom -> TODO()
+        }
+        val myTestStrategy = FastJumpyQuickStartStrategy()
+        return (0..steps).fold(emptyList()) { games, i ->
+            val lastGame = games.lastOrNull() ?: game
+            games.plus(sim.tick(mapOf(me.id to myTestStrategy.getAction(lastGame.unitById(me.id), lastGame, debug),
+                    enemyId to enemyStrategy.getAction(lastGame.unitById(enemyId), lastGame, debug))))
+        }
+    }
+
+    fun canHitToTarget(enemyType: EnemyType): Point? {
+        if (enemyType == EnemyType.Custom) return enemy().position.toPoint()
+        return predictStepsByType(enemyType, (me.position.distanceTo(enemy().position)).toInt()).last()
+    }
 }
 
 fun <T> Array<T>.findAmongBy(filter: (T) -> Boolean,
@@ -194,7 +223,7 @@ fun Point.toRectangleWithCenterInPoint(radius: Double): Rectangle {
 }
 
 fun Unit.isStaysOnMe(unit: model.Unit): Boolean {
-    return this.position.y - unit.topCenterPosition.y <= WorldSimulation.EPS
+    return this.position.y - unit.topCenterPosition.y <= (Global.properties.unitMaxHorizontalSpeedPerTick )
 }
 
 fun java.awt.Color.toColorFloat(a: Float? = null): ColorFloat = ColorFloat(this.red.toFloat(), this.green.toFloat(), this.blue.toFloat(), a
@@ -217,16 +246,27 @@ fun Unit.underMeTile(): Tile {
 fun Unit.upperMeTile(): Tile {
     return Global.level.tiles[this.positionInt.x][this.positionInt.y + 1]
 }
+
 fun Unit.bottomSide(): Collection<Point> {
-    return listOf(Point((x - width / 2) + (Global.properties.unitMaxHorizontalSpeedPerTick + WorldSimulation.EPS), y),
-            Point((x + width / 2) - (Global.properties.unitMaxHorizontalSpeedPerTick + WorldSimulation.EPS), y))
+    return listOf(Point(Math.floor(x), y),
+            Point(Math.floor(x + width), y))
 }
+
 fun Unit.topSide(): Collection<Point> {
-    return listOf(Point((x - width / 2) + (Global.properties.unitMaxHorizontalSpeedPerTick + WorldSimulation.EPS), y + height), Point((x + width / 2) - (Global.properties.unitMaxHorizontalSpeedPerTick + WorldSimulation.EPS), y + height))
+    return listOf(Point(Math.floor(x), y + height),
+            Point(Math.floor(x + width), y + height))
 }
+
 fun Unit.leftSide(): Collection<Point> {
-    return listOf(Point((x - width / 2), y + (Global.properties.unitMaxHorizontalSpeedPerTick + WorldSimulation.EPS)), Point((x - width / 2), y + height - (Global.properties.unitMaxHorizontalSpeedPerTick + WorldSimulation.EPS)))
+    return listOf(Point(x, Math.floor(y)),
+            Point(x, Math.floor(y + height)))
 }
+
 fun Unit.rightSide(): Collection<Point> {
-    return listOf(Point((x + width / 2), y + (Global.properties.unitMaxHorizontalSpeedPerTick + WorldSimulation.EPS)), Point((x + width / 2), y + height - (Global.properties.unitMaxHorizontalSpeedPerTick + WorldSimulation.EPS)))
+    return listOf(Point(x + width, Math.floor(y)),
+            Point(x + width, Math.floor(y + height)))
+}
+
+fun Unit.centerAndBootom(): Collection<Point> {
+    return listOf(Point(position.x, y + height), Point(position.x, y))
 }

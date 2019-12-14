@@ -1,6 +1,7 @@
 package korma_geom
 
 import korma_geom.internal.*
+import simulation.WorldSimulation
 
 interface IRectangle {
     val x: Double
@@ -63,12 +64,19 @@ data class Rectangle(
 
     operator fun contains(that: Rectangle) = isContainedIn(that, this)
     operator fun contains(that: IPoint) = contains(that.x, that.y)
-    fun contains(x: Double, y: Double) = (x >= left && x < right) && (y >= top && y < bottom)
+    fun contains(x: Double, y: Double) =
+//            Math.abs(x - this.left) < 1f/6 || Math.abs(x - this.right) < 1f/6 ||
+//            Math.abs(y - this.left) < 1f/6 || Math.abs(y - this.right) < 1f/6 ||
+            (x >= left && x < right) && (y >= top && y < bottom)
 
     infix fun intersects(that: Rectangle): Boolean = intersectsX(that) && intersectsY(that)
 
-    infix fun intersectsX(that: Rectangle): Boolean = that.left <= this.right && that.right >= this.left
-    infix fun intersectsY(that: Rectangle): Boolean = that.top <= this.bottom && that.bottom >= this.top
+    infix fun intersectsX(that: Rectangle): Boolean = Math.abs(that.right - this.left) < 1f/6 ||
+            Math.abs(that.left - this.right) < 1f/6 ||
+            that.left <= this.right && that.right >= this.left
+    infix fun intersectsY(that: Rectangle): Boolean = Math.abs(that.top - this.bottom) < 1f/6 ||
+            Math.abs(that.bottom - this.top) < 1f/6 ||
+            that.top <= this.bottom && that.bottom >= this.top
 
     fun setToIntersection(a: Rectangle, b: Rectangle) = this.apply { a.intersection(b, this) }
 
@@ -234,4 +242,4 @@ fun Iterable<Rectangle>.bounds(target: Rectangle = Rectangle()): Rectangle {
     return target.setBounds(left, top, right, bottom)
 }
 
-val IRectangle.asRectangle: Rectangle get() = Rectangle(x - width / 2, y, width, height)
+val IRectangle.asRectangle: Rectangle get() = Rectangle(x, y, width, height)
