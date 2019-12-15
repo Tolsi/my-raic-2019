@@ -114,14 +114,9 @@ class WorldSimulation {
                     updatedUnit.position.y += Global.properties.unitFallSpeedPerTick
                 }
                 updatedUnit.jumpState = JumpState.Simple
-                updatedUnit.onGround = true
-            } else if (unit.onLadder && isIFall) {
-                updatedUnit.jumpState = JumpState.Simple
-                updatedUnit.onGround = true
+            } else if (isIFall) {
+                updatedUnit.jumpState = if (unit.onLadder) JumpState.Simple else JumpState.Falling
                 updatedUnit.position.y -= Global.properties.unitFallSpeedPerTick
-            } else {
-                updatedUnit.position.y -= Global.properties.unitFallSpeedPerTick
-                updatedUnit.jumpState = JumpState.Falling
             }
         }
 
@@ -164,38 +159,34 @@ class WorldSimulation {
         if (updatedUnit.bottomSide().any { it.y.rem(1) < 1f/6 }) {
             when (underTile) {
                 Tile.PLATFORM, Tile.WALL -> {
-                    updatedUnit.onGround = true
                     updatedUnit.onLadder = false
                     updatedUnit.jumpState = JumpState.Simple
                 }
                 Tile.JUMP_PAD -> {
                     // todo jump after JUMP_PAD tile
-                    updatedUnit.onGround = false
                     updatedUnit.onLadder = false
                     updatedUnit.jumpState = JumpState.JumpPad
-                }
-//                Tile.LADDER -> {
-//                    updatedUnit.onGround = true
-//                }
-                else -> {
-                    updatedUnit.onGround = false
-                    updatedUnit.onLadder = false
                 }
             }
         }
 
         if (updatedUnit.bottomSide().any { it.onTile() == Tile.WALL } ) {
-            updatedUnit.onGround = true
             updatedUnit.onLadder = false
-        } else  if (updatedUnit.centerAndBootom().any { p -> Global.laddersAsRectangles.any { it.contains(p) } }) {
-            updatedUnit.onGround = true
+        } else  if (updatedUnit.isOnLadder()) {
             updatedUnit.onLadder = true
             updatedUnit.jumpState = JumpState.Simple
         } else {
             updatedUnit.onLadder = false
-            if ((isIFall || !unit.onGround) && !jump) {
-                updatedUnit.jumpState = JumpState.Falling
-            }
+        }
+
+        updatedUnit.onGround = updatedUnit.underMeTile() == Tile.WALL ||
+                updatedUnit.underMeTile() == Tile.LADDER ||
+                updatedUnit.underMeTile() == Tile.PLATFORM
+
+
+        if (!updatedUnit.isFalling() && !updatedUnit.onGround) {
+            updatedUnit.jumpState = JumpState.Falling
+            updatedUnit.position.y -= Global.properties.unitFallSpeedPerTick
         }
 
         game.lootBoxes.filter {
@@ -252,6 +243,7 @@ class WorldSimulation {
         // todo damage
         // todo die
         // todo count scores?
+        // урон-аптечка-проверка смерти
         game.bullets = movedBullets.filter { bullet ->
             bullet.x >= 0 && bullet.x <= Global.level.tiles.size &&
                     bullet.y >= 0 && bullet.y <= Global.level.tiles[0].size &&

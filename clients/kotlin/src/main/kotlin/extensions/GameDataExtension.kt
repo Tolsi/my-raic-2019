@@ -270,3 +270,6 @@ fun Unit.rightSide(): Collection<Point> {
 fun Unit.centerAndBootom(): Collection<Point> {
     return listOf(Point(position.x, y + height), Point(position.x, y))
 }
+fun Unit.isOnLadder(): Boolean {
+    return this.centerAndBootom().any { p -> Global.laddersAsRectangles.any { it.contains(p) } }
+}
