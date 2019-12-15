@@ -23,7 +23,6 @@ class WorldSimulation {
 //    }
     lateinit var lastGame: Game
 //    private var userBulletOnNextTick: MutableMap<Int, Bullet> = mutableMapOf()
-    private var userFallOnNextTick: MutableMap<Int, Boolean> = mutableMapOf()
     private var userLastActionAndState: MutableMap<Int, Pair<model.Unit, UnitAction>> = mutableMapOf()
 
     fun tick(unitsSteps: Map<Int, UnitAction>): Game {
@@ -83,11 +82,10 @@ class WorldSimulation {
         val reducedVelocity = action.velocityPerTick.coerceIn(-Global.properties.unitMaxHorizontalSpeedPerTick, Global.properties.unitMaxHorizontalSpeedPerTick)
         updatedUnit.position.x = unit.position.x + reducedVelocity
         // todo collide jump pad?
-        val isIFall = unit.isFalling() || userFallOnNextTick.getOrDefault(unit.id, false)
+        val isIFall = unit.isFalling()
         val jump = action.jump && updatedUnit.jumpState.canJump
-        if (action.jump && updatedUnit.jumpState.canJump) {
+        if (jump) {
             if (unit.onLadder) {
-                userFallOnNextTick.remove(unit.id)
                 updatedUnit.position.y += Global.properties.unitJumpSpeedPerTick
             } else if (unit.onGround) {
                 updatedUnit.jumpState.maxTime = Global.properties.unitJumpTime
@@ -113,7 +111,6 @@ class WorldSimulation {
             // todo если часто вверх и вниз, то что-то не так
             if (unit.onLadder && !isIFall) {
                 if (unit.bottomSide().any { it.onTile() != Tile.WALL }) {
-                    userFallOnNextTick.put(unit.id, true)
                     updatedUnit.position.y += Global.properties.unitFallSpeedPerTick
                 }
                 updatedUnit.jumpState = JumpState.Simple
@@ -122,16 +119,9 @@ class WorldSimulation {
                 updatedUnit.jumpState = JumpState.Simple
                 updatedUnit.onGround = true
                 updatedUnit.position.y -= Global.properties.unitFallSpeedPerTick
-            } else if (isIFall) {
+            } else {
                 updatedUnit.position.y -= Global.properties.unitFallSpeedPerTick
                 updatedUnit.jumpState = JumpState.Falling
-            } else if (!unit.onGround) {
-                userFallOnNextTick.put(unit.id, true)
-                updatedUnit.position.y += Global.properties.unitJumpSpeedPerTick
-                updatedUnit.jumpState.canCancel = true
-                updatedUnit.jumpState.canJump = true
-                updatedUnit.jumpState.speed = Global.properties.unitJumpSpeed
-                updatedUnit.jumpState.maxTime -= Global.properties.unitJumpTimePerTick
             }
         }
 
@@ -174,14 +164,12 @@ class WorldSimulation {
         if (updatedUnit.bottomSide().any { it.y.rem(1) < 1f/6 }) {
             when (underTile) {
                 Tile.PLATFORM, Tile.WALL -> {
-                    userFallOnNextTick.remove(unit.id)
                     updatedUnit.onGround = true
                     updatedUnit.onLadder = false
                     updatedUnit.jumpState = JumpState.Simple
                 }
                 Tile.JUMP_PAD -> {
                     // todo jump after JUMP_PAD tile
-                    userFallOnNextTick.remove(unit.id)
                     updatedUnit.onGround = false
                     updatedUnit.onLadder = false
                     updatedUnit.jumpState = JumpState.JumpPad
@@ -200,7 +188,6 @@ class WorldSimulation {
             updatedUnit.onGround = true
             updatedUnit.onLadder = false
         } else  if (updatedUnit.centerAndBootom().any { p -> Global.laddersAsRectangles.any { it.contains(p) } }) {
-            userFallOnNextTick.remove(unit.id)
             updatedUnit.onGround = true
             updatedUnit.onLadder = true
             updatedUnit.jumpState = JumpState.Simple
