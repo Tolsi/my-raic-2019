@@ -45,7 +45,7 @@ object CompareGames {
         //  it's ok because we don't control enemy
 //        result = result && correctGame.lootBoxes.size == calculatedGame.lootBoxes.size
         // it's ok because we don't control enemy
-        result = result && correctGame.bullets.size == calculatedGame.bullets.size
+//        result = result && correctGame.bullets.size == calculatedGame.bullets.size
         // bullets use random, we can't use it
 //        var bulletsPos = true
 //        correctGame.bullets.sortedBy { it.x + it.y * 100 }.zip(calculatedGame.bullets.sortedBy { it.x + it.y * 100 }).forEach { (f,s) ->
