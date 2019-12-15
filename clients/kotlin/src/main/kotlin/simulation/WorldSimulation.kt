@@ -66,16 +66,16 @@ class WorldSimulation {
         }
         if (action.shoot && unit.weapon != null && unit.weapon?.fireTimer == null && unit.weapon!!.magazine > 0) {
             val newBullet = Bullet(unit.weapon!!.typ, unit.id, unit.playerId, unit.position, Bullet.velocity(action.aim.toPoint(), unit.weapon!!.params.bullet.speed).toVec2Double(), unit.weapon!!.params.bullet.damage, unit.weapon!!.params.bullet.size, unit.weapon!!.params.explosion)
-            unit.weapon!!.lastFireTick = game.currentTick + 1
-            unit.weapon!!.magazine -= 1
-            unit.weapon!!.fireTimer = unit.weapon!!.params.fireRate
+            updatedUnit.weapon!!.lastFireTick = game.currentTick + 1
+            updatedUnit.weapon!!.magazine -= 1
+            updatedUnit.weapon!!.fireTimer = unit.weapon!!.params.fireRate
             resultGame.bullets = resultGame.bullets.plus(newBullet)
 //            userBulletOnNextTick.put(unit.id, newBullet)
         }
 
         if (unit.weapon != null && (action.reload || unit.weapon!!.magazine == 0)) {
             updatedUnit.weapon!!.fireTimer = unit.weapon!!.params.reloadTime
-            unit.weapon!!.magazine = unit.weapon!!.params.magazineSize
+            updatedUnit.weapon!!.magazine = unit.weapon!!.params.magazineSize
         }
 
         val reducedVelocity = action.velocityPerTick.coerceIn(-Global.properties.unitMaxHorizontalSpeedPerTick, Global.properties.unitMaxHorizontalSpeedPerTick)
@@ -104,7 +104,7 @@ class WorldSimulation {
             }
         } else {
             if (unit.onLadder && !isIFall) {
-                if (unit.bottomSide().any { it.onTile() != Tile.WALL }) {
+                if (unit.bottomSide().any { it.onTileOrEmpty() != Tile.WALL }) {
                     updatedUnit.position.y += Global.properties.unitFallSpeedPerTick
                 }
                 updatedUnit.jumpState = JumpState.Simple.copyOf()
@@ -137,20 +137,21 @@ class WorldSimulation {
 
         updatedUnit.calculateFields()
 
-        if (updatedUnit.leftSide().any { it.onTile() == Tile.WALL } ||
-                updatedUnit.rightSide().any { it.onTile() == Tile.WALL }) {
+        if (updatedUnit.leftSide().any { it.onTileOrEmpty() == Tile.WALL } ||
+                updatedUnit.rightSide().any { it.onTileOrEmpty() == Tile.WALL }) {
             updatedUnit.position.x = Math.round(updatedUnit.position.x).toDouble() + updatedUnit.size.x / 2 + EPS
         }
-        if (updatedUnit.bottomSide().any { it.onTile() == Tile.WALL } ||
-                updatedUnit.bottomSide().any { it.onTile() == Tile.PLATFORM } && !action.jumpDown ||
-                updatedUnit.topSide().any { it.onTile() == Tile.WALL }) {
+        if (updatedUnit.bottomSide().any { it.onTileOrEmpty() == Tile.WALL } ||
+                updatedUnit.bottomSide().any { it.onTileOrEmpty() == Tile.PLATFORM } && !action.jumpDown ||
+                updatedUnit.topSide().any { it.onTileOrEmpty() == Tile.WALL }) {
             updatedUnit.position.y = Math.round(updatedUnit.position.y).toDouble() + EPS
         }
 
         updatedUnit.calculateFields()
 
         // todo fix onGround!!!1
-        val underTile = updatedUnit.underMeTile()
+        // todo check death or out of field
+        val underTile = updatedUnit.underMeTile() ?: Tile.EMPTY
         if (updatedUnit.bottomSide().any { it.y.rem(1) <= 1f / 6 }) {
             when (underTile) {
                 Tile.PLATFORM, Tile.WALL -> {
@@ -165,7 +166,7 @@ class WorldSimulation {
             }
         }
 
-        if (updatedUnit.bottomSide().any { it.onTile() == Tile.WALL }) {
+        if (updatedUnit.bottomSide().any { it.onTileOrEmpty() == Tile.WALL }) {
             updatedUnit.onLadder = false
         } else if (underTile == Tile.LADDER && updatedUnit.isOnLadder()) {
             updatedUnit.onLadder = true
@@ -183,12 +184,16 @@ class WorldSimulation {
             updatedUnit.position.y -= Global.properties.unitFallSpeedPerTick
         }
 
+        updatedUnit.calculateFields()
+
         if (action.jump && !alreadyJump && updatedUnit.jumpState.canJump) {
             alreadyJump = true
             updatedUnit.jumpState = JumpState.Simple.copyOf()
             updatedUnit.position.y += Global.properties.unitJumpSpeedPerTick
             updatedUnit.jumpState.maxTime -= Global.properties.unitJumpTimePerTick
         }
+
+        updatedUnit.calculateFields()
 
         if (updatedUnit.onGround && !alreadyJump != updatedUnit.onGround) {
             updatedUnit.onGround = updatedUnit.onGround && !alreadyJump

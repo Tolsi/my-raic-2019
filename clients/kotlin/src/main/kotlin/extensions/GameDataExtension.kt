@@ -137,7 +137,9 @@ class GameDataExtension {
     val myPlayer: Player by lazy { game.players.find { it.id == me.playerId }!! }
     val enemiesPlayers: List<Player> by lazy { game.players.filter { it.id != me.playerId } }
     val enemyId: Int by lazy { game.units.find { me.id != it.id }!!.id }
-    fun enemy(): model.Unit { return game.units.find { me.id != it.id }!! }
+    fun enemy(): model.Unit {
+        return game.units.find { me.id != it.id }!!
+    }
 
     fun predictStepsByType(enemyType: EnemyType, steps: Int): List<Point> {
         return predictGamesByType(enemyType, steps).map { it.unitById(enemyId).position.toPoint() }
@@ -162,7 +164,9 @@ class GameDataExtension {
 
     fun canHitToTarget(enemyType: EnemyType): Point? {
         if (enemyType == EnemyType.Custom) return enemy().position.toPoint()
-        return predictStepsByType(enemyType, (me.position.distanceTo(enemy().position)).toInt()).last()
+        // 6 тиков = клетка
+        val predictedPosition = predictStepsByType(enemyType, (me.position.distanceTo(enemy().position)).toInt() * 6).last()
+        return predictedPosition.setTo(predictedPosition.x, predictedPosition.y + me.size.y / 2)
     }
 }
 
@@ -223,7 +227,7 @@ fun Point.toRectangleWithCenterInPoint(radius: Double): Rectangle {
 }
 
 fun Unit.isStaysOnMe(unit: model.Unit): Boolean {
-    return this.position.y - unit.topCenterPosition.y <= (Global.properties.unitMaxHorizontalSpeedPerTick )
+    return this.position.y - unit.topCenterPosition.y <= (Global.properties.unitMaxHorizontalSpeedPerTick)
 }
 
 fun java.awt.Color.toColorFloat(a: Float? = null): ColorFloat = ColorFloat(this.red.toFloat(), this.green.toFloat(), this.blue.toFloat(), a
@@ -235,16 +239,37 @@ fun Unit.isFalling(): Boolean {
     return this.jumpState == JumpState.Falling
 }
 
-fun Point.onTile(): Tile {
-    return Global.level.tiles[this.x.toInt()][this.y.toInt()]
+fun Point.onTile(): Tile? {
+    val x = this.x.toInt()
+    val y = this.y.toInt()
+    return if (y >= 0 && y <= Global.level.tiles[0].size
+            && x >= 0 && x <= Global.level.tiles.size) {
+        Global.level.tiles[x][y]
+    } else {
+        null
+    }
 }
 
-fun Unit.underMeTile(): Tile {
-    return Global.level.tiles[this.positionInt.x][this.positionInt.y - 1]
+fun Point.onTileOrEmpty(): Tile {
+    return onTile() ?: Tile.EMPTY
 }
 
-fun Unit.upperMeTile(): Tile {
-    return Global.level.tiles[this.positionInt.x][this.positionInt.y + 1]
+fun Unit.underMeTile(): Tile? {
+    return if (this.positionInt.y - 1 >= 0 && this.positionInt.y - 1 <= Global.level.tiles[0].size
+            && this.positionInt.x >= 0 && this.positionInt.x <= Global.level.tiles.size) {
+        Global.level.tiles[this.positionInt.x][this.positionInt.y - 1]
+    } else {
+        null
+    }
+}
+
+fun Unit.upperMeTile(): Tile? {
+    return if (this.positionInt.y + 1 >= 0 && this.positionInt.y + 1 <= Global.level.tiles[0].size
+            && this.positionInt.x >= 0 && this.positionInt.x <= Global.level.tiles.size) {
+        Global.level.tiles[this.positionInt.x][this.positionInt.y + 1]
+    } else {
+        null
+    }
 }
 
 fun Unit.bottomSide(): Collection<Point> {
@@ -270,6 +295,7 @@ fun Unit.rightSide(): Collection<Point> {
 fun Unit.centerAndBootom(): Collection<Point> {
     return listOf(Point(position.x, y + height + WorldSimulation.EPS), Point(position.x, y + WorldSimulation.EPS))
 }
+
 fun Unit.isOnLadder(): Boolean {
     return this.centerAndBootom().any { p -> Global.laddersAsRectangles.any { it.contains(p) } }
 }

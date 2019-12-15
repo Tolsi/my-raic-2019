@@ -4,10 +4,7 @@ import Debug
 import Global
 import Strategy
 import extensions.*
-import korma_geom.Point
-import korma_geom.distanceTo
-import korma_geom.farPoint
-import korma_geom.points
+import korma_geom.*
 import model.*
 import model.Unit
 import simulation.WorldSimulation
@@ -24,7 +21,7 @@ enum class EnemyType {
 open class MySituativeStrategy : Strategy() {
     private val s = GameDataExtension()
 
-    private var enemyType: EnemyType = EnemyType.Custom
+//    private var enemyType: EnemyType = EnemyType.Custom
     private var enemyPredictionsTypes: MutableMap<Int, Map<EnemyType, List<Point>>> = mutableMapOf()
     private var enemyPredictedType: MutableMap<Int, EnemyType> = mutableMapOf()
 
@@ -90,13 +87,11 @@ open class MySituativeStrategy : Strategy() {
             }
         } else targetToUnit.topCenterPosition ?: s.myStartPosition().toVec2Double()
 
-        var shoot = false
         debug.draw(CustomData.Line(me.centerPosition.toVec2Float(), targetToUnit.centerPosition.toVec2Float(), 0.1f, ColorFloat.Red))
         val mayBeAimTo = s.canHitToTarget(enemyPredictedType.getOrDefault(s.enemy().id, EnemyType.SmartGuy))
-        var aim = mayBeAimTo?.let { it.toVec2Double() } ?: Vec2Double(
-                targetToUnit.centerPosition.x - me.centerPosition.x,
-                targetToUnit.centerPosition.y - me.centerPosition.y)
-        shoot = s.isCanShoot() && !s.isCanHitMyselfOrWithEnemies(targetToUnit.centerPosition.toPoint()) && mayBeAimTo != null
+        val aim = mayBeAimTo?.minus(me.centerPosition)?.toVec2Double() ?: targetToUnit.centerPosition.minus(me.centerPosition)
+        var shoot = s.isCanShoot() &&
+                !s.isCanHitMyselfOrWithEnemies(targetToUnit.centerPosition.toPoint()) && mayBeAimTo != null
 
         var jump = game.currentTick <= s.jumpUntil || goToPoint.y > me.position.y
         if (goToPoint.x > me.position.x &&

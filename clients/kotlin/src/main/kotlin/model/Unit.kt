@@ -94,7 +94,7 @@ class Unit : IRectangle {
     }
 
     fun copyOf(): model.Unit {
-        return model.Unit(playerId, id, health, position.copyOf(), size, jumpState.copyOf(), walkedRight, stand, onGround, onLadder, mines, weapon)
+        return model.Unit(playerId, id, health, position.copyOf(), size, jumpState.copyOf(), walkedRight, stand, onGround, onLadder, mines, weapon?.copyOf())
     }
 
     override val x: Double
