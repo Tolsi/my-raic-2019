@@ -70,6 +70,7 @@ class WorldSimulation {
             val newBullet = Bullet(unit.weapon!!.typ, unit.id, unit.playerId, unit.position, Bullet.velocity(action.aim.toPoint(), unit.weapon!!.params.bullet.speed).toVec2Double(), unit.weapon!!.params.bullet.damage, unit.weapon!!.params.bullet.size, unit.weapon!!.params.explosion)
             unit.weapon!!.lastFireTick = game.currentTick + 1
             unit.weapon!!.magazine -= 1
+            unit.weapon!!.fireTimer = unit.weapon!!.params.fireRate
             resultGame.bullets = resultGame.bullets.plus(newBullet)
 //            userBulletOnNextTick.put(unit.id, newBullet)
         }
@@ -82,8 +83,8 @@ class WorldSimulation {
         val reducedVelocity = action.velocityPerTick.coerceIn(-Global.properties.unitMaxHorizontalSpeedPerTick, Global.properties.unitMaxHorizontalSpeedPerTick)
         updatedUnit.position.x = unit.position.x + reducedVelocity
         // todo collide jump pad?
-        // todo take bonuses and weapon if allowed
         val isIFall = unit.isFalling() || userFallOnNextTick.getOrDefault(unit.id, false)
+        val jump = action.jump && updatedUnit.jumpState.canJump
         if (action.jump && updatedUnit.jumpState.canJump) {
             if (unit.onLadder) {
                 userFallOnNextTick.remove(unit.id)
@@ -109,8 +110,7 @@ class WorldSimulation {
                 }
             }
         } else {
-            // todo Считается, что юнит находится на лестнице, если отрезок от центра юнита до середины нижней границе юнита пересекается с тайлом.
-            // todo 208 step! если часто вверх и вниз, то что-то не так
+            // todo если часто вверх и вниз, то что-то не так
             if (unit.onLadder && !isIFall) {
                 if (unit.bottomSide().any { it.onTile() != Tile.WALL }) {
                     userFallOnNextTick.put(unit.id, true)
@@ -186,9 +186,9 @@ class WorldSimulation {
                     updatedUnit.onLadder = false
                     updatedUnit.jumpState = JumpState.JumpPad
                 }
-                Tile.LADDER -> {
-                    updatedUnit.onGround = true
-                }
+//                Tile.LADDER -> {
+//                    updatedUnit.onGround = true
+//                }
                 else -> {
                     updatedUnit.onGround = false
                     updatedUnit.onLadder = false
@@ -206,6 +206,9 @@ class WorldSimulation {
             updatedUnit.jumpState = JumpState.Simple
         } else {
             updatedUnit.onLadder = false
+            if ((isIFall || !unit.onGround) && !jump) {
+                updatedUnit.jumpState = JumpState.Falling
+            }
         }
 
         game.lootBoxes.filter {

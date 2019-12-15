@@ -4,7 +4,7 @@ import extensions.*
 import model.Game
 
 object CompareGames {
-    val assertEPS = 1
+    val assertEPS = 1f/6
 
     fun equalsInEPS(value: Double, correct: Double): Boolean {
         val res = Math.abs(value - correct) <= assertEPS
@@ -36,7 +36,7 @@ object CompareGames {
 //                result = result && (calculatedUnit.weapon!!.lastAngle == null)
 //            }
             if (correctUnit.weapon!!.fireTimer != null) {
-                result = result && calculatedUnit.weapon != null && Math.abs((calculatedUnit.weapon?.fireTimer ?: 0.0) - (correctUnit.weapon?.fireTimer ?: 0.0)) < 0.001
+                result = result && calculatedUnit.weapon != null && Math.abs((calculatedUnit.weapon?.fireTimer ?: 0.0) - (correctUnit.weapon?.fireTimer ?: 0.0)) < 0.02
             } else {
                 result = result && (calculatedUnit.weapon!!.fireTimer == null)
             }
@@ -45,7 +45,7 @@ object CompareGames {
         //  it's ok because we don't control enemy
 //        result = result && correctGame.lootBoxes.size == calculatedGame.lootBoxes.size
         // it's ok because we don't control enemy
-//        result = result && correctGame.bullets.size == calculatedGame.bullets.size
+        result = result && correctGame.bullets.size == calculatedGame.bullets.size
         // bullets use random, we can't use it
 //        var bulletsPos = true
 //        correctGame.bullets.sortedBy { it.x + it.y * 100 }.zip(calculatedGame.bullets.sortedBy { it.x + it.y * 100 }).forEach { (f,s) ->

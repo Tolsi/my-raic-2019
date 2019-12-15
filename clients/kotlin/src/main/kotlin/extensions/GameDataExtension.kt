@@ -248,23 +248,23 @@ fun Unit.upperMeTile(): Tile {
 }
 
 fun Unit.bottomSide(): Collection<Point> {
-    return listOf(Point(Math.floor(x), y),
-            Point(Math.floor(x + width), y))
+    return listOf(Point(Math.round(x), y),
+            Point(Math.round(x + width), y))
 }
 
 fun Unit.topSide(): Collection<Point> {
-    return listOf(Point(Math.floor(x), y + height),
-            Point(Math.floor(x + width), y + height))
+    return listOf(Point(Math.round(x), y + height),
+            Point(Math.round(x + width), y + height))
 }
 
 fun Unit.leftSide(): Collection<Point> {
-    return listOf(Point(x, Math.floor(y)),
-            Point(x, Math.floor(y + height)))
+    return listOf(Point(x, Math.round(y)),
+            Point(x, Math.round(y + height)))
 }
 
 fun Unit.rightSide(): Collection<Point> {
-    return listOf(Point(x + width, Math.floor(y)),
-            Point(x + width, Math.floor(y + height)))
+    return listOf(Point(x + width, Math.round(y)),
+            Point(x + width, Math.round(y + height)))
 }
 
 fun Unit.centerAndBootom(): Collection<Point> {
