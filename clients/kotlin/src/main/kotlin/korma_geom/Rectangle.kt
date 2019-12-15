@@ -34,6 +34,7 @@ data class Rectangle(
         inline operator fun invoke(): Rectangle = Rectangle(0.0, 0.0, 0.0, 0.0)
         inline operator fun invoke(x: Number, y: Number, width: Number, height: Number): Rectangle = Rectangle(x.toDouble(), y.toDouble(), width.toDouble(), height.toDouble())
         inline fun fromBounds(left: Number, top: Number, right: Number, bottom: Number): Rectangle = Rectangle().setBounds(left, top, right, bottom)
+        // todo make it +/-
         fun isContainedIn(a: Rectangle, b: Rectangle): Boolean = a.x >= b.x && a.y >= b.y && a.x + a.width <= b.x + b.width && a.y + a.height <= b.y + b.height
     }
 
@@ -65,17 +66,17 @@ data class Rectangle(
     operator fun contains(that: Rectangle) = isContainedIn(that, this)
     operator fun contains(that: IPoint) = contains(that.x, that.y)
     fun contains(x: Double, y: Double) =
-//            Math.abs(x - this.left) < 1f/6 || Math.abs(x - this.right) < 1f/6 ||
-//            Math.abs(y - this.left) < 1f/6 || Math.abs(y - this.right) < 1f/6 ||
+            Math.abs(x - this.left) < WorldSimulation.EPS || Math.abs(x - this.right) < WorldSimulation.EPS ||
+            Math.abs(y - this.left) < WorldSimulation.EPS || Math.abs(y - this.right) < WorldSimulation.EPS ||
             (x >= left && x < right) && (y >= top && y < bottom)
 
     infix fun intersects(that: Rectangle): Boolean = intersectsX(that) && intersectsY(that)
 
-    infix fun intersectsX(that: Rectangle): Boolean = Math.abs(that.right - this.left) < 1f/6 ||
-            Math.abs(that.left - this.right) < 1f/6 ||
+    infix fun intersectsX(that: Rectangle): Boolean = Math.abs(that.right - this.left) < WorldSimulation.EPS ||
+            Math.abs(that.left - this.right) < WorldSimulation.EPS ||
             that.left <= this.right && that.right >= this.left
-    infix fun intersectsY(that: Rectangle): Boolean = Math.abs(that.top - this.bottom) < 1f/6 ||
-            Math.abs(that.bottom - this.top) < 1f/6 ||
+    infix fun intersectsY(that: Rectangle): Boolean = Math.abs(that.top - this.bottom) < WorldSimulation.EPS ||
+            Math.abs(that.bottom - this.top) < WorldSimulation.EPS ||
             that.top <= this.bottom && that.bottom >= this.top
 
     fun setToIntersection(a: Rectangle, b: Rectangle) = this.apply { a.intersection(b, this) }
