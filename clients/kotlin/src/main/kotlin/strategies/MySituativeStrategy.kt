@@ -7,7 +7,6 @@ import extensions.*
 import korma_geom.*
 import model.*
 import model.Unit
-import simulation.WorldSimulation
 import java.awt.Color
 
 enum class EnemyType {
@@ -87,11 +86,17 @@ open class MySituativeStrategy : Strategy() {
             }
         } else targetToUnit.topCenterPosition ?: s.myStartPosition().toVec2Double()
 
-        debug.draw(CustomData.Line(me.centerPosition.toVec2Float(), targetToUnit.centerPosition.toVec2Float(), 0.1f, ColorFloat.Red))
-        val mayBeAimTo = s.canHitToTarget(enemyPredictedType.getOrDefault(s.enemy().id, EnemyType.SmartGuy))
-        val aim = mayBeAimTo?.minus(me.centerPosition)?.toVec2Double() ?: targetToUnit.centerPosition.minus(me.centerPosition)
-        var shoot = s.isCanShoot() &&
-                !s.isCanHitMyselfOrWithEnemies(targetToUnit.centerPosition.toPoint()) && mayBeAimTo != null
+        // todo стрелять наперед - надо доделать!
+        val mayBeAimTo = s.predictTarget(enemyPredictedType.getOrDefault(s.enemy().id, EnemyType.SmartGuy))
+        val targetPoint = mayBeAimTo?.toVec2Double() ?: targetToUnit.centerPosition
+//        val targetPoint = targetToUnit.centerPosition
+        debug.draw(CustomData.Line(me.centerPosition.toVec2Float(), targetPoint.toVec2Float(), 0.1f, ColorFloat.Red))
+
+        val aim = targetPoint.minus(me.centerPosition)
+        val shoot = s.isCanShoot() &&
+                !s.isCanHitMyselfOrWithEnemies(targetToUnit.centerPosition.toPoint())
+                && me.weapon!!.spread.radians.degrees < 3
+//                && mayBeAimTo != null
 
         var jump = game.currentTick <= s.jumpUntil || goToPoint.y > me.position.y
         if (goToPoint.x > me.position.x &&

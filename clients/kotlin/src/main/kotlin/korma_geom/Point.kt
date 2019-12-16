@@ -94,9 +94,9 @@ data class Point(override var x: Double, override var y: Double) : Comparable<IP
         setTo(this.x + that.x, this.y + that.y)
     }
 
-    fun normalize() {
+    fun normalize(): Point {
         val len = this.length
-        this.setTo(this.x / len, this.y / len)
+        return this.setTo(this.x / len, this.y / len)
     }
 
     override fun toString(): String = "(${x.niceStr}, ${y.niceStr})"

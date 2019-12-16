@@ -1,8 +1,9 @@
 package model
 
+import korma_geom.IRectangle
 import util.StreamUtil
 
-class Level {
+class Level: IRectangle {
     lateinit var tiles: Array<Array<model.Tile>>
     constructor() {}
     constructor(tiles: Array<Array<model.Tile>>) {
@@ -41,6 +42,11 @@ class Level {
             }
         }
     }
+
+    override val x: Double = 0.0
+    override val y: Double = 0.0
+    override val width: Double = tiles.size.toDouble()
+    override val height: Double = tiles[0].size.toDouble()
 
     override fun toString(): String {
         return "Level(tiles=${tiles.contentToString()})"

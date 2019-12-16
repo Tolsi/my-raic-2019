@@ -8,6 +8,7 @@ import model.Unit
 import simulation.WorldSimulation
 import strategies.*
 import java.awt.Color
+import korma_geom.range.OpenRange
 
 class GameDataExtension {
     public lateinit var me: model.Unit
@@ -162,11 +163,19 @@ class GameDataExtension {
         }
     }
 
-    fun canHitToTarget(enemyType: EnemyType): Point? {
+    fun predictTarget(enemyType: EnemyType): Point? {
         if (enemyType == EnemyType.Custom) return enemy().position.toPoint()
         // 6 тиков = клетка
-        val predictedPosition = predictStepsByType(enemyType, (me.position.distanceTo(enemy().position)).toInt() * 6).last()
+        val predictedPosition = predictStepsByType(enemyType, (me.position.distanceTo(enemy().position) / (me.weapon?.params?.bullet?.speedPerTick ?: 10.0)).toInt()).last()
         return predictedPosition.setTo(predictedPosition.x, predictedPosition.y + me.size.y / 2)
+    }
+
+    fun isCanHitTargetNow(targetUnit: Unit) {
+        // todo 0 or PI? move direction?
+        val lastWeaponAngle = me.weapon!!.lastAngle ?: Math.PI
+        val spread = me.weapon!!.spread
+        // todo подходящий угол и шанс попасть в стену не велик
+        spread.minus(targetUnit.points.sumByDouble { p -> Angle.fromRadians(lastWeaponAngle).shortDistanceTo(me.centerPosition.angleTo(p)).radians }) < 2
     }
 }
 
@@ -272,22 +281,22 @@ fun Unit.upperMeTile(): Tile? {
     }
 }
 
-fun Unit.bottomSide(): Collection<Point> {
+fun IRectangle.bottomSide(): Collection<Point> {
     return listOf(Point(Math.round(x), y),
             Point(Math.round(x + width), y))
 }
 
-fun Unit.topSide(): Collection<Point> {
+fun IRectangle.topSide(): Collection<Point> {
     return listOf(Point(Math.round(x), y + height),
             Point(Math.round(x + width), y + height))
 }
 
-fun Unit.leftSide(): Collection<Point> {
+fun IRectangle.leftSide(): Collection<Point> {
     return listOf(Point(x, Math.round(y)),
             Point(x, Math.round(y + height)))
 }
 
-fun Unit.rightSide(): Collection<Point> {
+fun IRectangle.rightSide(): Collection<Point> {
     return listOf(Point(x + width, Math.round(y)),
             Point(x + width, Math.round(y + height)))
 }
@@ -298,4 +307,16 @@ fun Unit.centerAndBootom(): Collection<Point> {
 
 fun Unit.isOnLadder(): Boolean {
     return this.centerAndBootom().any { p -> Global.laddersAsRectangles.any { it.contains(p) } }
+}
+
+fun Weapon.aimRange(): ClosedRange<Angle> {
+    return (Angle.fromRadians(this.lastAngle!! - this.spread)).rangeTo(Angle.fromRadians(this.lastAngle!! + this.spread))
+}
+
+fun IRectangle.lines(): Collection<Line> {
+    return listOf(
+            this.leftSide().toLine(),
+            this.rightSide().toLine(),
+            this.topSide().toLine(),
+            this.bottomSide().toLine())
 }
