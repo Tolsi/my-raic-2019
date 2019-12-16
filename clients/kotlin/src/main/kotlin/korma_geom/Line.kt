@@ -57,6 +57,10 @@ data class Line(val from: Point, val to: Point) {
         return p.distanceTo(Pb)
     }
 
+    fun infiniteDistance(p: Point): Double {
+        return Math.abs((to.y - from.y) * p.x - (to.x - from.x) * p.y + to.x * from.y - to.y * from.x) / Math.sqrt(Math.pow(to.y - from.y, 2.0) + Math.pow(to.x - from.x, 2.0))
+    }
+
     fun times(n: Double): Line {
         return Line(from, Point(from.x + (to.x - from.x) * n, from.y + (to.y - from.y) * n))
     }
