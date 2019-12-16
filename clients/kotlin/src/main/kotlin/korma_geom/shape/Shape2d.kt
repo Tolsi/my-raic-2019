@@ -65,10 +65,25 @@ abstract class Shape2d {
                 "Rectangle(x=${x.niceStr}, y=${y.niceStr}, width=${width.niceStr}, height=${height.niceStr})"
     }
 
-    data class Polygon(val points: IPointArrayList) : Shape2d() {
+    data class Polygon(val points: IPointArrayList) : Shape2d(), WithArea {
         override val paths = listOf(points)
         override val closed: Boolean = true
         override fun containsPoint(x: Double, y: Double): Boolean = this.points.contains(x, y)
+        override val area: Double
+            get() {
+                // Initialize area
+                var area = 0.0
+
+                // Calculate value of shoelace formula
+                var j = points.size - 1
+                points.indices.forEach { i ->
+                    area += (points.getX(j) + points.getX(i)) * (points.getY(j) - points.getY(i))
+                    j = i  // j is previous vertex to i
+                }
+
+                // Return absolute value
+                return Math.abs(area / 2.0)
+            }
     }
 
     data class Polyline(val points: IPointArrayList) : Shape2d(), WithArea {
@@ -125,8 +140,7 @@ fun Shape2d.clip(clipper: Shape2d): Shape2d.Polygon {
 
         // We pass the current array of vertices, it's size
         // and the end points of the selected clipper line
-        val r = clip(polygon, clipperPolygon.points.get(i), clipperPolygon.points.get(k))
-        r
+        clip(polygon, clipperPolygon.points.get(i), clipperPolygon.points.get(k))
     })
 }
 
