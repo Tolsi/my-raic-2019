@@ -18,7 +18,8 @@ val IRectangle.left get() = x
 val IRectangle.top get() = y
 val IRectangle.right get() = x + width
 val IRectangle.bottom get() = y + height
-val IRectangle.points get() = listOf(Point(x + width / 2, y + height / 2), Point(x + width / 2,  y - height / 2), Point(x - width / 2, y + height / 2), Point(x - width / 2, y - height / 2))
+val IRectangle.centricPoints get() = listOf(Point(x - width / 2, y), Point(x - width / 2,  y + height), Point(x + width / 2, y + height), Point(x + width / 2, y))
+val IRectangle.points get() = listOf(Point(x, y), Point(x,  y+ height), Point(x + width, y + height), Point(x+ width, y))
 fun Iterable<IPoint>.farPoint(from: IPoint): IPoint? {
     return this.sortedBy { -from.distanceTo(it) }.firstOrNull()
 }

@@ -8,7 +8,6 @@ import model.Unit
 import simulation.WorldSimulation
 import strategies.*
 import java.awt.Color
-import korma_geom.range.OpenRange
 
 class GameDataExtension {
     public lateinit var me: model.Unit
@@ -175,7 +174,7 @@ class GameDataExtension {
         val lastWeaponAngle = me.weapon!!.lastAngle ?: Math.PI
         val spread = me.weapon!!.spread
         // todo подходящий угол и шанс попасть в стену не велик
-        spread.minus(targetUnit.points.sumByDouble { p -> Angle.fromRadians(lastWeaponAngle).shortDistanceTo(me.centerPosition.angleTo(p)).radians }) < 2
+        spread.minus(targetUnit.centricPoints.sumByDouble { p -> Angle.fromRadians(lastWeaponAngle).shortDistanceTo(me.centerPosition.angleTo(p)).radians }) < 2
     }
 }
 

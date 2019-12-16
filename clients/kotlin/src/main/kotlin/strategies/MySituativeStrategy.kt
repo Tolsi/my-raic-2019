@@ -72,7 +72,7 @@ open class MySituativeStrategy : Strategy() {
                 if (targetToUnit.weapon?.typ == WeaponType.ROCKET_LAUNCHER) 0.8 else 0.45) {
             nearestHealthPack?.position ?: s.myStartPosition().toVec2Double()
         } else if (me.weapon == null && nearestWeapon != null) {
-            nearestWeapon.points.farPoint(me.position.toPoint())!!.toVec2Double()
+            nearestWeapon.centricPoints.farPoint(me.position.toPoint())!!.toVec2Double()
         } else if (nearestHealthPack != null) {
             val healthPackCloserToMeThanEnemy =
                     nearestHealthPack.position.distanceTo(me.position) < targetToUnit.position.distanceTo(me.position)
