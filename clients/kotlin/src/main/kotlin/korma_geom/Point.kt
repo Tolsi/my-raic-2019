@@ -29,6 +29,7 @@ data class Point(override var x: Double, override var y: Double) : Comparable<IP
 
         //inline operator fun invoke(): Point = Point(0.0, 0.0) // @TODO: // e: java.lang.NullPointerException at org.jetbrains.kotlin.com.google.gwt.dev.js.JsAstMapper.mapFunction(JsAstMapper.java:562) (val pt = Array(1) { Point() })
         operator fun invoke(): Point = Point(0.0, 0.0)
+
         operator fun invoke(v: IPoint): Point = Point(v.x, v.y)
         inline operator fun invoke(x: Number, y: Number): Point = Point(x.toDouble(), y.toDouble())
         inline operator fun invoke(xy: Number): Point = Point(xy.toDouble(), xy.toDouble())
@@ -38,7 +39,7 @@ data class Point(override var x: Double, override var y: Double) : Comparable<IP
         fun angle(a: IPoint, b: IPoint): Angle = Angle.fromRadians(acos((a.dot(b)) / (a.length * b.length)))
 
         fun angle(ax: Double, ay: Double, bx: Double, by: Double): Angle = Angle.between(ax, ay, bx, by)
-            //acos(((ax * bx) + (ay * by)) / (hypot(ax, ay) * hypot(bx, by)))
+        //acos(((ax * bx) + (ay * by)) / (hypot(ax, ay) * hypot(bx, by)))
 
         fun compare(lx: Double, ly: Double, rx: Double, ry: Double): Int {
             val ret = ly.compareTo(ry)
@@ -110,6 +111,7 @@ inline fun Point.setTo(x: Number, y: Number): Point = setTo(x.toDouble(), y.toDo
 
 // @TODO: mul instead of dot
 operator fun IPoint.plus(that: IPoint): IPoint = IPoint(x + that.x, y + that.y)
+
 operator fun IPoint.minus(that: IPoint): IPoint = IPoint(x - that.x, y - that.y)
 operator fun IPoint.times(that: IPoint): IPoint = IPoint(x * that.x, y * that.y)
 operator fun IPoint.div(that: IPoint): IPoint = IPoint(x / that.x, y / that.y)
@@ -162,12 +164,14 @@ inline class PointInt(val p: Point) : IPointInt, Comparable<IPointInt> {
             return if (ret == 0) lx.compareTo(rx) else ret
         }
     }
+
     override var x: Int
         set(value) = run { p.x = value.toDouble() }
         get() = p.x.toInt()
     override var y: Int
         set(value) = run { p.y = value.toDouble() }
         get() = p.y.toInt()
+
     fun setTo(x: Int, y: Int) = this.apply { this.x = x; this.y = y }
     fun setTo(that: IPointInt) = this.setTo(that.x, that.y)
     override fun toString(): String = "($x, $y)"
@@ -193,4 +197,28 @@ fun Iterable<IPoint>.getPolylineLength(): Double {
         prev = cur
     }
     return out
+}
+
+val Point.up get(): Point = this.copy(y = this.y + 1)
+val Point.right get(): Point = this.copy(x = this.x + 1)
+val Point.down get(): Point = this.copy(y = this.y - 1)
+val Point.left get(): Point = this.copy(x = this.x - 1)
+val Point.neighbours get(): List<Point> = listOf(up,  down, right, left)
+
+fun Point.directionTo(p: Point): List<Direction> {
+    val directions = mutableListOf<Direction>()
+
+    if (x > p.x) {
+        directions.add(Direction.LEFT)
+    } else if (x < p.x) {
+        directions.add(Direction.RIGHT)
+    }
+
+    if (y > p.y) {
+        directions.add(Direction.DOWN)
+    } else if (y < p.y) {
+        directions.add(Direction.UP)
+    }
+
+    return directions
 }

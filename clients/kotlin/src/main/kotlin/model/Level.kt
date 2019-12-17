@@ -45,8 +45,8 @@ class Level: IRectangle {
 
     override val x: Double = 0.0
     override val y: Double = 0.0
-    override val width: Double = tiles.size.toDouble()
-    override val height: Double = tiles[0].size.toDouble()
+    override val width: Double by lazy { tiles.size.toDouble() }
+    override val height: Double by lazy { tiles[0].size.toDouble() }
 
     override fun toString(): String {
         return "Level(tiles=${tiles.contentToString()})"

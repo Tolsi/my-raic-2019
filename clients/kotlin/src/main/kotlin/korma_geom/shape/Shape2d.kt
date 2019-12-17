@@ -201,3 +201,50 @@ private fun clip(polygon: Shape2d.Polygon, p1: Point, p2: Point): Shape2d.Polygo
 
     return Shape2d.Polygon(PointArrayList(newPolygonPoints))
 }
+
+fun Shape2d.merge(shape2d: Shape2d): Shape2d.Polygon? {
+    val allPoints = this.paths.flatten().plus(shape2d.paths.flatten())
+    val uniquePoints = allPoints.distinct()
+    val canBeMerged = uniquePoints.size <= allPoints.size - 2
+    return if (canBeMerged) {
+        Shape2d.Polygon(PointArrayList(uniquePoints.sortForPolygon()))
+    } else {
+        null
+    }
+}
+
+// todo not works :<
+fun Collection<Point>.sortForPolygon(): List<Point> {
+    val notUsed = this.toMutableSet()
+    var currentPoint = this.first()
+    var lastDirection = Direction.UP
+    notUsed.remove(currentPoint)
+    val result = mutableListOf(currentPoint)
+    do {
+        val allowedDirections = Direction.continueDirection(lastDirection).filter { notUsed.contains(currentPoint.plus(it.shift)) }
+        lastDirection = if (allowedDirections.size == 3) {
+            allowedDirections.maxBy { currentPoint.plus(it.shift).distanceTo(result.first()) }!!
+        } else {
+            allowedDirections.first()
+        }
+        currentPoint = currentPoint.plus(lastDirection.shift).mutable
+        notUsed.remove(currentPoint)
+        result.add(currentPoint)
+    } while (notUsed.isNotEmpty())
+    require(this.size == result.size)
+    return result
+}
+
+//fun Shape2d.Polygon.sortPoints(): Shape2d.Polygon {
+//    return Shape2d.Polygon(PointArrayList(this.points.sortForPolygon()))
+//}
+
+fun Shape2d.simplify(): Shape2d.Polygon {
+    val groupedByX = getAllPoints().groupBy { it.x }.toList().flatMap { (x, points) ->
+        listOf(Point(x, points.map { it.y }.min()!!), Point(x, points.map { it.y }.max()!!))
+    }.toSet()
+    val groupedByY = getAllPoints().groupBy { it.y }.flatMap { (y, points) ->
+        listOf(Point(points.map { it.x }.min()!!, y), Point(points.map { it.x }.max()!!, y))
+    }.toSet()
+    return Shape2d.Polygon(PointArrayList(groupedByX.intersect(groupedByY).toList()))
+}

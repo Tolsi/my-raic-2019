@@ -3,11 +3,13 @@ package extensions
 import Debug
 import Global
 import korma_geom.*
+import korma_geom.shape.*
 import model.*
 import model.Unit
 import simulation.WorldSimulation
 import strategies.*
 import java.awt.Color
+import kotlin.random.Random
 
 class GameDataExtension {
     public lateinit var me: model.Unit
@@ -165,7 +167,8 @@ class GameDataExtension {
     fun predictTarget(enemyType: EnemyType): Point? {
         if (enemyType == EnemyType.Custom) return enemy().position.toPoint()
         // 6 тиков = клетка
-        val predictedPosition = predictStepsByType(enemyType, (me.position.distanceTo(enemy().position) / (me.weapon?.params?.bullet?.speedPerTick ?: 10.0)).toInt()).last()
+        val predictedPosition = predictStepsByType(enemyType, (me.position.distanceTo(enemy().position) / (me.weapon?.params?.bullet?.speedPerTick
+                ?: 10.0)).toInt()).last()
         return predictedPosition.setTo(predictedPosition.x, predictedPosition.y + me.size.y / 2)
     }
 
@@ -199,25 +202,6 @@ fun Vec2Double.toVec2Float(): Vec2Float {
     return Vec2Float(this.x.toFloat(), this.y.toFloat())
 }
 
-fun model.Level.tilesToRectanglesWithBorders(tileType: model.Tile): Collection<Rectangle> {
-    val tiles = this.tiles.mapIndexed { x, line ->
-        line.mapIndexed { y, tile ->
-            if (tile == tileType) {
-                Rectangle(x, y, 1, 1)
-            } else null
-        }
-    }.flatten().filterNotNull()
-
-    val borders = mutableListOf<Rectangle>()
-    for (y in -1..Global.level.tiles[0].size + 1) {
-        borders.plus(Rectangle(-1, y, 1, 1))
-    }
-    for (x in -1..Global.level.tiles.size + 1) {
-        borders.plus(Rectangle(x, -1, 1, 1))
-    }
-    return tiles.plus(borders)
-}
-
 fun model.Level.tilesToRectangles(tileType: model.Tile): Collection<Rectangle> {
     val tiles = this.tiles.mapIndexed { x, line ->
         line.mapIndexed { y, tile ->
@@ -228,6 +212,54 @@ fun model.Level.tilesToRectangles(tileType: model.Tile): Collection<Rectangle> {
     }.flatten().filterNotNull()
 
     return tiles
+}
+//
+//fun model.Level.tilesToRectanglesWithoutBounds(tileType: model.Tile): Collection<Rectangle> {
+//    val tiles = this.tiles.mapIndexed { x, line ->
+//        line.mapIndexed { y, tile ->
+//            if (x == Global.level.x.toInt() || x == Global.level.width.toInt() ||
+//                    y == Global.level.y.toInt() || y == Global.level.height.toInt()) {
+//                null
+//            } else if (tile == tileType) {
+//                Rectangle(x, y, 1, 1)
+//            } else null
+//        }
+//    }.flatten().filterNotNull()
+//
+//    return tiles
+//}
+
+fun model.Level.tilesToPolygons(tileType: model.Tile): List<Shape2d.Polygon> {
+    var result = mutableSetOf<Shape2d.Polygon>()
+
+    this.tiles.forEachIndexed { x, line ->
+        line.forEachIndexed { y, tile ->
+            if (tile == tileType &&
+                    x != 0 && x != Global.level.width.toInt() - 1 &&
+                    y != 0 && y != Global.level.height.toInt() - 1) {
+//                val newResult = result.toMutableSet()
+                val rect = Shape2d.Rectangle(x, y, 1, 1)
+                if (result.isEmpty()) {
+                    result.add(rect.toPolygon())
+                } else {
+                    val mergedPolygonAndResults = result.asSequence().map { it to it.merge(rect) }.filter { it.second != null }.toList()
+                    if (mergedPolygonAndResults.isEmpty()) {
+                        result.add(rect.toPolygon())
+                    } else {
+                        val allMerged = mergedPolygonAndResults.map { it.second!! }.reduce { f, s -> f.merge(s)!! }
+                        mergedPolygonAndResults.forEach { result.remove(it.first) }
+                        result.add(allMerged)
+                    }
+                }
+//                result = newResult
+            }
+        }
+    }
+
+    return result.
+//            map { it.simplify() }.
+//            map { it.sortPoints() }.
+            toList()
 }
 
 fun Point.toRectangleWithCenterInPoint(radius: Double): Rectangle {
@@ -318,4 +350,10 @@ fun IRectangle.lines(): Collection<Line> {
             this.rightSide().toLine(),
             this.topSide().toLine(),
             this.bottomSide().toLine())
+}
+
+val allColors = listOf(Color.BLACK, Color.BLUE, Color.CYAN, Color.DARK_GRAY, Color.GRAY, Color.GREEN, Color.LIGHT_GRAY, Color.MAGENTA, Color.ORANGE, Color.PINK, Color.RED, Color.WHITE, Color.YELLOW)
+
+fun randomColor(): Color {
+    return allColors.random()
 }
