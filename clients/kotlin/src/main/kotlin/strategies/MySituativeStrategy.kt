@@ -25,16 +25,7 @@ open class MySituativeStrategy : Strategy() {
     private var enemyPredictedType: MutableMap<Int, EnemyType> = mutableMapOf()
 
     override fun getAction(me: model.Unit, game: Game, debug: Debug): UnitAction {
-        for (x in 0..game.level.width.toInt()) {
-            val color = if (x % 5 == 0) Color.YELLOW.toColorFloat(0.4f) else Color.WHITE.toColorFloat(0.4f)
-            debug.draw(CustomData.Line(Vec2Float(x.toFloat(), 0.0f), Vec2Float(x.toFloat(), game.level.height.toFloat()), 0.1f, color))
-            debug.draw(CustomData.PlacedText("$x", Vec2Float(x.toFloat(), -1f), TextAlignment.LEFT, 16f, Color.WHITE.toColorFloat()))
-        }
-        for (y in 0..game.level.height.toInt()) {
-            val color = if (y % 5 == 0) Color.YELLOW.toColorFloat(0.4f) else Color.WHITE.toColorFloat(0.4f)
-            debug.draw(CustomData.Line(Vec2Float(0.0f, y.toFloat()), Vec2Float(game.level.width.toFloat(), y.toFloat()), 0.1f, color))
-            debug.draw(CustomData.PlacedText("$y", Vec2Float(-1f, y.toFloat() - 0.5f), TextAlignment.LEFT, 16f, Color.WHITE.toColorFloat()))
-        }
+        GameDataExtension.drawDebugGrid(game, debug)
 
         Global.init(game)
 
@@ -141,20 +132,7 @@ open class MySituativeStrategy : Strategy() {
 //        line to go to point
 //        debug.draw(CustomData.Line(me.position.toVec2Float(), goToPoint.toVec2Float(), 0.2f, ColorFloat.Green))
 //        debug level
-        for (r in Global.wallsAsRectangles) {
-            debug.draw(CustomData.Rect(r.position.toVec2Float(), Vec2Float(r.size.width.toFloat(), r.size.height.toFloat()), Color.CYAN.toColorFloat(0.5f)))
-        }
-        for (p in Global.wallsAsPolygon) {
-            val c = randomColor().toColorFloat(0.5f)
-            val pc = randomColor().toColorFloat(0.5f)
-            val firstAndLast = listOf(p.points.first(), p.points.last())
-            p.points.plus(firstAndLast).windowed(2).forEach { (f, s) ->
-                debug.draw(CustomData.Line(f.toVec2Float(), s.toVec2Float(), 0.2f, c))
-            }
-            for (point in p.points) {
-                debug.draw(CustomData.Rect(point.toVec2Float(), Vec2Float(0.2f, 0.2f), pc))
-            }
-        }
+        s.drawWallsPolygons()
 //        s.debugAllBullets()
 //        targetToUnit?.let {
 //            debug.draw(CustomData.Rect(it.position.toVec2Float(), Vec2Float(0.3f, 0.3f), Color.RED.toColorFloat(0.5f)))

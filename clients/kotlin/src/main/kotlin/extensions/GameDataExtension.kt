@@ -87,6 +87,29 @@ class GameDataExtension {
         return false
     }
 
+    fun debugDrawWalls() {
+        for (r in Global.wallsAsRectangles) {
+            debug.draw(CustomData.Rect(r.position.toVec2Float(), Vec2Float(r.size.width.toFloat(), r.size.height.toFloat()), Color.CYAN.toColorFloat(0.5f)))
+        }
+    }
+
+    fun drawPolygon(p: Shape2d.Polygon) {
+        val c = randomColor().toColorFloat(0.5f)
+        val pc = randomColor().toColorFloat(0.5f)
+        p.closedPoints.windowed(2).forEach { (f, s) ->
+            debug.draw(CustomData.Line(f.toVec2Float(), s.toVec2Float(), 0.2f, c))
+        }
+        for (point in p.points) {
+            debug.draw(CustomData.Rect(point.toVec2Float(), Vec2Float(0.2f, 0.2f), pc))
+        }
+    }
+
+    fun drawWallsPolygons() {
+        for (p in Global.wallsAsPolygon) {
+            drawPolygon(p)
+        }
+    }
+
     fun debugIfIShootNow(target: Point) {
         if (me.weapon != null) {
             val weaponParams = me.weapon!!.params
@@ -178,6 +201,21 @@ class GameDataExtension {
         val spread = me.weapon!!.spread
         // todo подходящий угол и шанс попасть в стену не велик
         spread.minus(targetUnit.centricPoints.sumByDouble { p -> Angle.fromRadians(lastWeaponAngle).shortDistanceTo(me.centerPosition.angleTo(p)).radians }) < 2
+    }
+
+    companion object {
+        fun drawDebugGrid(game: Game, debug: Debug) {
+            for (x in 0..game.level.width.toInt()) {
+                val color = if (x % 5 == 0) Color.YELLOW.toColorFloat(0.4f) else Color.WHITE.toColorFloat(0.4f)
+                debug.draw(CustomData.Line(Vec2Float(x.toFloat(), 0.0f), Vec2Float(x.toFloat(), game.level.height.toFloat()), 0.1f, color))
+                debug.draw(CustomData.PlacedText("$x", Vec2Float(x.toFloat(), -1f), TextAlignment.LEFT, 16f, Color.WHITE.toColorFloat()))
+            }
+            for (y in 0..game.level.height.toInt()) {
+                val color = if (y % 5 == 0) Color.YELLOW.toColorFloat(0.4f) else Color.WHITE.toColorFloat(0.4f)
+                debug.draw(CustomData.Line(Vec2Float(0.0f, y.toFloat()), Vec2Float(game.level.width.toFloat(), y.toFloat()), 0.1f, color))
+                debug.draw(CustomData.PlacedText("$y", Vec2Float(-1f, y.toFloat() - 0.5f), TextAlignment.LEFT, 16f, Color.WHITE.toColorFloat()))
+            }
+        }
     }
 }
 

@@ -69,6 +69,9 @@ abstract class Shape2d {
     data class Polygon(val points: IPointArrayList) : Shape2d(), WithArea {
         override val paths = listOf(points)
         override val closed: Boolean = true
+        val closedPoints by lazy {
+            points.plus(points.first())
+        }
         override fun containsPoint(x: Double, y: Double): Boolean = this.points.contains(x, y)
         override val area: Double
             get() {
@@ -238,10 +241,8 @@ fun Shape2d.Polygon.sortPoints(): Shape2d.Polygon {
     return Shape2d.Polygon(PointArrayList(this.points.sortForPolygon()!!))
 }
 
-fun Shape2d.simplify(): Shape2d.Polygon {
-    val points = getAllPoints()
-    val lastToFirst = listOf(points.last(), points.first())
-    val result = points.windowed(2).plus(listOf(lastToFirst)).fold(null as Direction? to listOf<Point>()) { (lastDirection, points), (f, s) ->
+fun Shape2d.Polygon.simplify(): Shape2d.Polygon {
+    val result = closedPoints.windowed(2).fold(null as Direction? to listOf<Point>()) { (lastDirection, points), (f, s) ->
         val newDirection = f.directionTo(s).first()
         val newPoints = if (lastDirection == null || lastDirection != newDirection) {
             points.plus(f)
