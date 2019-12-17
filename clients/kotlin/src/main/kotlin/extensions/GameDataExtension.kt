@@ -57,7 +57,7 @@ class GameDataExtension {
 
     fun distanceToMe(smtn: Vec2Double): Double = distanceSqr(smtn, me.position)
 
-    // todo remove after deikstra algo will be realized
+    // todo remove after deikstra korma_geom.algo will be realized
     fun isStayOnPlaceLastMoves(n: Int): Boolean {
         return lastStepsUnits.size >= n &&
                 lastStepsUnits.reversed().take(n).map { it.units.find { it.id == me.id }!!.position }.toSet().size == 1
@@ -257,8 +257,8 @@ fun model.Level.tilesToPolygons(tileType: model.Tile): List<Shape2d.Polygon> {
     }
 
     return result.
-//            map { it.simplify() }.
-//            map { it.sortPoints() }.
+            map { it.sortPoints() }.
+            map { it.simplify() }.
             toList()
 }
 
@@ -356,4 +356,18 @@ val allColors = listOf(Color.BLACK, Color.BLUE, Color.CYAN, Color.DARK_GRAY, Col
 
 fun randomColor(): Color {
     return allColors.random()
+}
+
+fun <T> List<T>.permutations(): Sequence<List<T>> {
+    if (this.size == 1) return sequenceOf(this)
+    val list = this
+    return sequence {
+        val sub = list.get(0)
+        for (perm in list.drop(1).permutations())
+            for (i in 0..perm.size) {
+                val newPerm = perm.toMutableList()
+                newPerm.add(i, sub)
+                yield(newPerm)
+            }
+    }
 }

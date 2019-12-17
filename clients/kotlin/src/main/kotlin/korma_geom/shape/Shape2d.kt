@@ -4,6 +4,7 @@ import korma_geom.*
 import korma_geom.internal.niceStr
 import kotlin.math.PI
 import kotlin.math.hypot
+import kac.Stack
 
 abstract class Shape2d {
     abstract val paths: List<IPointArrayList>
@@ -207,44 +208,47 @@ fun Shape2d.merge(shape2d: Shape2d): Shape2d.Polygon? {
     val uniquePoints = allPoints.distinct()
     val canBeMerged = uniquePoints.size <= allPoints.size - 2
     return if (canBeMerged) {
-        Shape2d.Polygon(PointArrayList(uniquePoints.sortForPolygon()))
+        Shape2d.Polygon(PointArrayList(uniquePoints))
     } else {
         null
     }
 }
 
 // todo not works :<
-fun Collection<Point>.sortForPolygon(): List<Point> {
-    val notUsed = this.toMutableSet()
-    var currentPoint = this.first()
-    var lastDirection = Direction.UP
-    notUsed.remove(currentPoint)
-    val result = mutableListOf(currentPoint)
+fun Collection<Point>.sortForPolygon(): List<Point>? {
+    val allowedPaths = Stack<List<Point>>()
+    val sortedPoints = this.sortedBy { it.x + it.y * 100 }
+    val startAndPreEndPoint = sortedPoints.first()
+    allowedPaths.push(listOf(startAndPreEndPoint))
     do {
-        val allowedDirections = Direction.continueDirection(lastDirection).filter { notUsed.contains(currentPoint.plus(it.shift)) }
-        lastDirection = if (allowedDirections.size == 3) {
-            allowedDirections.maxBy { currentPoint.plus(it.shift).distanceTo(result.first()) }!!
+        val mayBePath = allowedPaths.poll()
+        val notUsed = this.toSet().minus(mayBePath)
+        val lastPoint = mayBePath.last()
+        if (lastPoint.neighbours.contains(startAndPreEndPoint) && notUsed.isEmpty()) {
+            return mayBePath
         } else {
-            allowedDirections.first()
+            val nextPoints = lastPoint.neighbours.filter { notUsed.contains(it) }
+            nextPoints.forEach { allowedPaths.push(mayBePath.plus(it)) }
         }
-        currentPoint = currentPoint.plus(lastDirection.shift).mutable
-        notUsed.remove(currentPoint)
-        result.add(currentPoint)
-    } while (notUsed.isNotEmpty())
-    require(this.size == result.size)
-    return result
+    } while (allowedPaths.isNotEmpty())
+    return null
 }
 
-//fun Shape2d.Polygon.sortPoints(): Shape2d.Polygon {
-//    return Shape2d.Polygon(PointArrayList(this.points.sortForPolygon()))
-//}
+fun Shape2d.Polygon.sortPoints(): Shape2d.Polygon {
+    return Shape2d.Polygon(PointArrayList(this.points.sortForPolygon()!!))
+}
 
 fun Shape2d.simplify(): Shape2d.Polygon {
-    val groupedByX = getAllPoints().groupBy { it.x }.toList().flatMap { (x, points) ->
-        listOf(Point(x, points.map { it.y }.min()!!), Point(x, points.map { it.y }.max()!!))
-    }.toSet()
-    val groupedByY = getAllPoints().groupBy { it.y }.flatMap { (y, points) ->
-        listOf(Point(points.map { it.x }.min()!!, y), Point(points.map { it.x }.max()!!, y))
-    }.toSet()
-    return Shape2d.Polygon(PointArrayList(groupedByX.intersect(groupedByY).toList()))
+    val points = getAllPoints()
+    val lastToFirst = listOf(points.last(), points.first())
+    val result = points.windowed(2).plus(listOf(lastToFirst)).fold(null as Direction? to listOf<Point>()) { (lastDirection, points), (f, s) ->
+        val newDirection = f.directionTo(s).first()
+        val newPoints = if (lastDirection == null || lastDirection != newDirection) {
+            points.plus(f)
+        } else {
+            points
+        }
+        newDirection to newPoints
+    }.second
+    return Shape2d.Polygon(PointArrayList(result))
 }

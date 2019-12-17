@@ -95,7 +95,7 @@ open class MySituativeStrategy : Strategy() {
             } else {
                 nearestHealthPack.position
             }
-        } else targetToUnit.topCenterPosition ?: s.myStartPosition().toVec2Double()
+        } else targetToUnit.topCenterPosition
 
         // todo стрелять наперед - надо доделать!
         val mayBeAimTo = s.predictTarget(enemyPredictedType.getOrDefault(s.enemy().id, EnemyType.SmartGuy))
@@ -144,14 +144,15 @@ open class MySituativeStrategy : Strategy() {
         for (r in Global.wallsAsRectangles) {
             debug.draw(CustomData.Rect(r.position.toVec2Float(), Vec2Float(r.size.width.toFloat(), r.size.height.toFloat()), Color.CYAN.toColorFloat(0.5f)))
         }
-//        for (p in Global.wallsAsPolygon) {
-//            debug.draw(CustomData.Polygon(p.points.map {
-//                ColoredVertex(it.toVec2Float(), Color.BLUE.toColorFloat(0.3f))
-//            }.toTypedArray()))
-//        }
         for (p in Global.wallsAsPolygon) {
+            val c = randomColor().toColorFloat(0.5f)
+            val pc = randomColor().toColorFloat(0.5f)
+            val firstAndLast = listOf(p.points.first(), p.points.last())
+            p.points.plus(firstAndLast).windowed(2).forEach { (f, s) ->
+                debug.draw(CustomData.Line(f.toVec2Float(), s.toVec2Float(), 0.2f, c))
+            }
             for (point in p.points) {
-                debug.draw(CustomData.Rect(point.toVec2Float(), Vec2Float(0.2f, 0.2f), ColorFloat.Blue))
+                debug.draw(CustomData.Rect(point.toVec2Float(), Vec2Float(0.2f, 0.2f), pc))
             }
         }
 //        s.debugAllBullets()
