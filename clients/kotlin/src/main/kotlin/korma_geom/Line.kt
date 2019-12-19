@@ -91,6 +91,16 @@ data class Line(val from: Point, val to: Point) {
         return infiniteIntersects(p)?.takeIf { isInRectangleBetweenPoints(it) }
     }
 
+    fun normalize(): Line {
+        val normX = (to.x - from.x) / length
+        val normY = (to.y - from.y) / length
+        return Line(from, from.plus(Point(normX, normY)).mutable)
+    }
+
+    fun withLength(length: Double): Line {
+        return normalize().times(length)
+    }
+
     fun distance(p: Point): Double {
         val v = to - from
         val w = p - from

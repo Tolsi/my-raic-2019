@@ -128,6 +128,7 @@ fun IPointArrayList.toShape2d(closed: Boolean = true): Shape2d {
 
 fun Shape2d.getAllPoints(out: PointArrayList = PointArrayList()): PointArrayList = out.apply { for (path in this@getAllPoints.paths) add(path) }
 fun Shape2d.toPolygon(): Shape2d.Polygon = if (this is Shape2d.Polygon) this else Shape2d.Polygon(this.getAllPoints())
+fun Rectangle.toPolygon(): Shape2d.Polygon = this.points.toPolygon()
 
 fun List<IPoint>.containsPoint(x: Double, y: Double): Boolean {
     var intersections = 0
@@ -141,7 +142,7 @@ fun List<IPoint>.containsPoint(x: Double, y: Double): Boolean {
 
 // Implements Sutherland–Hodgman algorithm
 fun Shape2d.clip(clipper: Shape2d): Shape2d.Polygon {
-    require(this.closed && clipper.closed)
+//    require(this.closed && clipper.closed)
     // todo what if it is inside of clipper?
 //    if (this.getAllPoints().all { clipper.containsPoint(it.x, it.y) }) {
 //        return this.toPolygon()
@@ -161,7 +162,7 @@ fun Shape2d.clip(clipper: Shape2d): Shape2d.Polygon {
 // This functions clips all the edges w.r.t one clip
 // edge of clipping area
 private fun clip(polygon: Shape2d.Polygon, p1: Point, p2: Point): Shape2d.Polygon {
-    val newPolygonPoints = mutableListOf<Point>()
+    val newPolygonPoints = mutableSetOf<Point>()
     val x1 = p1.x
     val y1 = p1.y
     val x2 = p2.x
@@ -212,7 +213,7 @@ private fun clip(polygon: Shape2d.Polygon, p1: Point, p2: Point): Shape2d.Polygo
         }
     }
 
-    return Shape2d.Polygon(PointArrayList(newPolygonPoints))
+    return Shape2d.Polygon(PointArrayList(newPolygonPoints.toList()))
 }
 
 fun Shape2d.merge(shape2d: Shape2d): Shape2d.Polygon? {

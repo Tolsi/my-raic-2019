@@ -46,6 +46,10 @@ class GameDataExtension {
         return game.units.filter { it.id != me.id }
     }
 
+    public fun friends(): List<model.Unit> {
+        return notMe().filter { it.playerId == me.playerId }
+    }
+
     public inline fun <reified T : model.Item> nearestItemType(): LootBox? {
         return game.lootBoxes.findAmongBy({ it.item is T }, { distanceToMe(it.position).toInt() })
     }
@@ -101,21 +105,44 @@ class GameDataExtension {
 
     fun drawViewAreaAndWallsIntersections() {
         if (me.weapon != null && me.weapon!!.lastAngle != null) {
-            val zeroAngleLine = me.centerPosition.toPoint().toZeroAngleLine()
+            val fromPoint = me.centerPosition.toPoint()
+            val zeroAngleLine = fromPoint.toZeroAngleLine()
             val aimBoundsPoints = me.weapon!!.spreadRange().bounds().toList().map { angle ->
                 Global.level.boundLines().asSequence().mapNotNull {
                     // todo intersectsDirected
                     zeroAngleLine.rotate(angle).intersectsInfiniteDirected(it)
                 }.first()
             }
-            val triangle = Triangle(aimBoundsPoints.get(0), me.centerPosition.toPoint(), aimBoundsPoints.get(1), fixOrientation = false, checkOrientation = false)
+            val triangle = Triangle(aimBoundsPoints.get(0), fromPoint, aimBoundsPoints.get(1), fixOrientation = false, checkOrientation = false)
 
-            Global.wallsAsPolygon.plus(notMe().map { Shape2d.Rectangle(it.asRectangle).toPolygon() }).forEach { p ->
-                val clipped = p.clip(triangle.toPolygon())
-                if (clipped.points.isNotEmpty()) {
-                    drawPolygon(clipped)
-                }
+            val enemiesPolygons = enemies().map { it.asRectangle.toPolygon() }
+            val friendsPolygons = friends().map { it.asRectangle.toPolygon() }
+
+            val clippedWallsPolygons = Global.wallsAsPolygon.mapNotNull { p ->
+                p.clip(triangle.toPolygon()).takeIf { it.points.isNotEmpty() }
             }
+            val clippedEnemiesPolygons = enemiesPolygons.mapNotNull { p ->
+                p.clip(triangle.toPolygon()).takeIf { it.points.isNotEmpty() }
+            }
+            val clippedFriendsPolygons = friendsPolygons.mapNotNull { p ->
+                p.clip(triangle.toPolygon()).takeIf { it.points.isNotEmpty() }
+            }
+
+            val allPoints = clippedWallsPolygons.plus(clippedEnemiesPolygons).plus(clippedFriendsPolygons).flatMap { poly -> poly.points.map { it to poly } }
+
+            val leftAimLine = Line(fromPoint, aimBoundsPoints.get(0))
+            val rightAimLine = Line(fromPoint, aimBoundsPoints.get(1))
+
+            drawPolygon(triangle.toPolygon())
+
+            allPoints.map { it to fromPoint.distanceTo(it.first) }.sortedBy { it.second }.forEach { (pointAndPoly, distance) ->
+                val (point, poly) = pointAndPoly
+                val leftPoint = leftAimLine.withLength(distance).to
+                val rightPoint = rightAimLine.withLength(distance).to
+                debug.draw(CustomData.Line(leftPoint.toVec2Float(), rightPoint.toVec2Float(), 0.2f, Color.MAGENTA.toColorFloat()))
+            }
+
+
         }
     }
 
