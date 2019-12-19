@@ -215,7 +215,7 @@ fun Shape2d.merge(shape2d: Shape2d): Shape2d.Polygon? {
     val uniquePoints = allPoints.distinct()
     val canBeMerged = uniquePoints.size <= allPoints.size - 2
     return if (canBeMerged) {
-        Shape2d.Polygon(PointArrayList(uniquePoints))
+        uniquePoints.toPolygon()
     } else {
         null
     }

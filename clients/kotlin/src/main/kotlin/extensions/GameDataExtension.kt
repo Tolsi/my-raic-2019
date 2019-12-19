@@ -294,7 +294,6 @@ fun model.Level.tilesToPolygons(tileType: model.Tile): List<Shape2d.Polygon> {
                     x != Global.level.width.toInt() - 1 &&
 //                    y != 0 &&
                     y != Global.level.height.toInt() - 1) {
-//                val newResult = result.toMutableSet()
                 val rect = Shape2d.Rectangle(x, y, 1, 1)
                 if (result.isEmpty()) {
                     result.add(rect.toPolygon())
@@ -308,7 +307,6 @@ fun model.Level.tilesToPolygons(tileType: model.Tile): List<Shape2d.Polygon> {
                         result.add(allMerged)
                     }
                 }
-//                result = newResult
             }
         }
     }
