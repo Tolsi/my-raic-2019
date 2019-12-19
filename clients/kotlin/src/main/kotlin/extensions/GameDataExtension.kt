@@ -288,7 +288,37 @@ fun model.Level.tilesToRectangles(tileType: model.Tile): Collection<Rectangle> {
 //}
 
 fun model.Level.tilesToPolygons(tileType: model.Tile): List<Shape2d.Polygon> {
-    return Global.wallsAsRectangles.map { it.points.toPolygon() }
+    val result = mutableSetOf<Shape2d.Polygon>()
+
+    this.tiles.forEachIndexed { x, line ->
+        line.forEachIndexed { y, tile ->
+            if (tile == tileType &&
+                    x != 0 &&
+                    x != Global.level.width.toInt() - 1 &&
+//                    y != 0 &&
+                    y != Global.level.height.toInt() - 1) {
+                val rect = Shape2d.Rectangle(x, y, 1, 1)
+                if (result.isEmpty()) {
+                    result.add(rect.toPolygon())
+                } else {
+                    val mergedPolygonAndResults = result.asSequence().map { it to it.merge(rect) }.filter { it.second != null }.toList()
+                    if (mergedPolygonAndResults.isEmpty()) {
+                        result.add(rect.toPolygon())
+                    } else {
+                        val allMerged = mergedPolygonAndResults.map { it.second!! }.reduce { f, s -> f.merge(s)!! }
+                        mergedPolygonAndResults.forEach { result.remove(it.first) }
+                        result.add(allMerged)
+                    }
+                }
+            }
+        }
+    }
+
+    return result.
+            sortedBy { it.points.size }.
+            map { it.travellingSalesmanProblem() }.
+            map { it.simplify() }.
+            toList()
 }
 
 fun Point.toRectangleWithCenterInPoint(radius: Double): Rectangle {

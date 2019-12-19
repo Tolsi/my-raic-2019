@@ -225,7 +225,42 @@ fun Shape2d.merge(shape2d: Shape2d): Shape2d.Polygon? {
     }
 }
 
-fun Collection<Point>.travellingSalesmanProblem(): List<Point>? {
+fun Collection<Point>.twoWaysBfsTravellingSalesmanProblem(): List<Point>? {
+
+    if (this.size % 2 != 0) return null
+    // dfs
+    // val allowedPaths = Stack<Pair<List<Point>, List<Point>>>()
+    // bfs
+    val allowedPaths = Queue<Pair<List<Point>, List<Point>>>()
+    val sortedPoints = this.groupBy { it.x }.flatMap { it.value.sortedBy { it.y } }
+    val startAndPreEndPoint = sortedPoints.first()
+    allowedPaths.add(listOf(startAndPreEndPoint) to listOf())
+    do {
+        val (leftPath, rightPath) = allowedPaths.poll()
+        val notUsed = this.toSet().minus(leftPath).minus(rightPath)
+        val lastLeftPoint = leftPath.last()
+        val lastRightPointOpt = rightPath.lastOrNull()
+        if (lastRightPointOpt.let { it == lastLeftPoint }) {
+            if (notUsed.isEmpty()) {
+                return leftPath.plus(rightPath.dropLast(1).asReversed())
+            }
+        } else if (lastRightPointOpt == null) {
+            val leftNeighboursPoints = lastLeftPoint.neighbours.filter { notUsed.contains(it) }
+            allowedPaths.add(leftPath.plus(leftNeighboursPoints[0]) to listOf(leftNeighboursPoints[1]))
+        } else {
+            val leftNeighboursPoints = lastLeftPoint.neighbours.filter { notUsed.contains(it) }
+            val rightNeighboursPoints = lastLeftPoint.neighbours.filter { notUsed.contains(it) }
+            leftNeighboursPoints.forEach {leftNeighbour ->
+                rightNeighboursPoints.forEach { rightNeighbour ->
+                    allowedPaths.add(leftPath.plus(leftNeighbour) to rightPath.plus(rightNeighbour))
+                }
+            }
+        }
+    } while (allowedPaths.isNotEmpty())
+    return null
+}
+
+fun Collection<Point>.dfsTravellingSalesmanProblem(): List<Point>? {
     // dfs
     val allowedPaths = Stack<List<Point>>()
     // bfs
@@ -313,7 +348,7 @@ fun List<IPoint>.toPolygon(): Shape2d.Polygon {
 }
 
 fun Shape2d.Polygon.travellingSalesmanProblem(): Shape2d.Polygon {
-    return this.points.travellingSalesmanProblem()!!.toPolygon()
+    return this.points.twoWaysBfsTravellingSalesmanProblem()!!.toPolygon()
 }
 
 fun Shape2d.Polygon.simplify(): Shape2d.Polygon {
