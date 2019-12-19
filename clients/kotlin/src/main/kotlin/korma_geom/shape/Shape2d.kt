@@ -1,5 +1,6 @@
 package korma_geom.shape
 
+import extensions.permutations
 import kac.Queue
 import korma_geom.*
 import korma_geom.internal.niceStr
@@ -249,7 +250,7 @@ fun Collection<Point>.twoWaysBfsTravellingSalesmanProblem(): List<Point>? {
             allowedPaths.add(leftPath.plus(leftNeighboursPoints[0]) to listOf(leftNeighboursPoints[1]))
         } else {
             val leftNeighboursPoints = lastLeftPoint.neighbours.filter { notUsed.contains(it) }
-            val rightNeighboursPoints = lastLeftPoint.neighbours.filter { notUsed.contains(it) }
+            val rightNeighboursPoints = lastRightPointOpt.neighbours.filter { notUsed.contains(it) }
             leftNeighboursPoints.forEach {leftNeighbour ->
                 rightNeighboursPoints.forEach { rightNeighbour ->
                     allowedPaths.add(leftPath.plus(leftNeighbour) to rightPath.plus(rightNeighbour))
