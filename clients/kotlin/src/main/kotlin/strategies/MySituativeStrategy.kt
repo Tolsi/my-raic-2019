@@ -27,7 +27,7 @@ open class MySituativeStrategy : Strategy() {
     override fun getAction(me: model.Unit, game: Game, debug: Debug): UnitAction {
         GameDataExtension.drawDebugGrid(game, debug)
 
-        Global.init(game)
+        Global.init(game, debug)
 
         s.update(me, game, debug)
 
@@ -133,6 +133,7 @@ open class MySituativeStrategy : Strategy() {
 //        debug.draw(CustomData.Line(me.position.toVec2Float(), goToPoint.toVec2Float(), 0.2f, ColorFloat.Green))
 //        debug level
         s.drawWallsPolygons()
+//        s.drawViewAreaAndWallsIntersections()
 //        s.debugAllBullets()
 //        targetToUnit?.let {
 //            debug.draw(CustomData.Rect(it.position.toVec2Float(), Vec2Float(0.3f, 0.3f), Color.RED.toColorFloat(0.5f)))

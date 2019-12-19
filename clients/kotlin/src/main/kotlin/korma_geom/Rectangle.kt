@@ -221,7 +221,7 @@ val IRectangleInt.center get() = anchor(0.5, 0.5)
 
 ///////////////////////////
 
-fun Iterable<Rectangle>.bounds(target: Rectangle = Rectangle()): Rectangle {
+fun Iterable<Rectangle>.boundLines(target: Rectangle = Rectangle()): Rectangle {
     var first = true
     var left = 0.0
     var right = 0.0

@@ -1,10 +1,12 @@
 package korma_geom.shape
 
+import kac.Queue
 import korma_geom.*
 import korma_geom.internal.niceStr
 import kotlin.math.PI
 import kotlin.math.hypot
 import kac.Stack
+import korma.algo.AStar
 
 abstract class Shape2d {
     abstract val paths: List<IPointArrayList>
@@ -72,6 +74,7 @@ abstract class Shape2d {
         val closedPoints by lazy {
             points.plus(points.first())
         }
+
         override fun containsPoint(x: Double, y: Double): Boolean = this.points.contains(x, y)
         override val area: Double
             get() {
@@ -217,12 +220,13 @@ fun Shape2d.merge(shape2d: Shape2d): Shape2d.Polygon? {
     }
 }
 
-// todo not works :<
-fun Collection<Point>.sortForPolygon(): List<Point>? {
-    val allowedPaths = Stack<List<Point>>()
-    val sortedPoints = this.sortedBy { it.x + it.y * 100 }
+fun Collection<Point>.travellingSalesmanProblem(): List<Point>? {
+//    val allowedPaths = Stack<List<Point>>()
+    // bfs
+    val allowedPaths = Queue<List<Point>>()
+    val sortedPoints = this.groupBy { it.x }.flatMap { it.value.sortedBy { it.y } }
     val startAndPreEndPoint = sortedPoints.first()
-    allowedPaths.push(listOf(startAndPreEndPoint))
+    allowedPaths.add(listOf(startAndPreEndPoint))
     do {
         val mayBePath = allowedPaths.poll()
         val notUsed = this.toSet().minus(mayBePath)
@@ -231,14 +235,73 @@ fun Collection<Point>.sortForPolygon(): List<Point>? {
             return mayBePath
         } else {
             val nextPoints = lastPoint.neighbours.filter { notUsed.contains(it) }
-            nextPoints.forEach { allowedPaths.push(mayBePath.plus(it)) }
+            nextPoints.forEach {
+                val mayBePathBack = notUsed.plus(startAndPreEndPoint).minus(it).dfs(it, startAndPreEndPoint)
+                if (mayBePathBack != null) {
+                    if (mayBePathBack.size == notUsed.size) {
+                        return mayBePath.plus(mayBePathBack)
+                    } else {
+                        allowedPaths.add(mayBePath.plus(it))
+                    }
+                }
+            }
         }
     } while (allowedPaths.isNotEmpty())
     return null
 }
 
-fun Shape2d.Polygon.sortPoints(): Shape2d.Polygon {
-    return Shape2d.Polygon(PointArrayList(this.points.sortForPolygon()!!))
+fun Collection<Point>.dfs(from: Point, to: Point): List<Point>? {
+    val allowedPaths = Stack<List<Point>>()
+//    val allowedPaths = Queue<List<Point>>()
+    allowedPaths.push(listOf(from))
+    if (from == to) {
+        return allowedPaths.first()
+    }
+    do {
+        val mayBePath = allowedPaths.poll()
+        val notUsed = this.toSet().minus(mayBePath)
+        val lastPoint = mayBePath.last()
+        if (lastPoint.neighbours.contains(to)) {
+            return mayBePath
+        } else {
+            val nextPoints = lastPoint.neighbours.filter { notUsed.contains(it) }
+            nextPoints.forEach {
+                allowedPaths.push(mayBePath.plus(it))
+            }
+        }
+    } while (allowedPaths.isNotEmpty())
+    return null
+}
+
+fun Collection<Point>.bfs(from: Point, to: Point): List<Point>? {
+//    val allowedPaths = Stack<List<Point>>()
+    val allowedPaths = Queue<List<Point>>()
+    allowedPaths.add(listOf(from))
+    if (from == to) {
+        return allowedPaths.first()
+    }
+    do {
+        val mayBePath = allowedPaths.poll()
+        val notUsed = this.toSet().minus(mayBePath)
+        val lastPoint = mayBePath.last()
+        if (lastPoint.neighbours.contains(to)) {
+            return mayBePath
+        } else {
+            val nextPoints = lastPoint.neighbours.filter { notUsed.contains(it) }
+            nextPoints.forEach {
+                allowedPaths.add(mayBePath.plus(it))
+            }
+        }
+    } while (allowedPaths.isNotEmpty())
+    return null
+}
+
+fun List<IPoint>.toPolygon(): Shape2d.Polygon {
+    return Shape2d.Polygon(PointArrayList(this))
+}
+
+fun Shape2d.Polygon.travellingSalesmanProblem(): Shape2d.Polygon {
+    return this.points.travellingSalesmanProblem()!!.toPolygon()
 }
 
 fun Shape2d.Polygon.simplify(): Shape2d.Polygon {

@@ -57,6 +57,8 @@ data class Point(override var x: Double, override var y: Double) : Comparable<IP
         fun distance(a: IPoint, b: IPoint): Double = distance(a.x, a.y, b.x, b.y)
         fun distance(a: IPointInt, b: IPointInt): Double = distance(a.x, a.y, b.x, b.y)
 
+        fun steps(a: IPoint, b: IPoint): Int = Math.abs(a.x.roundToInt() - b.x.roundToInt()) + Math.abs(a.y.roundToInt() - b.y.roundToInt())
+
         //val ax = x1 - x2
         //val ay = y1 - y2
         //val al = hypot(ax, ay)
@@ -142,6 +144,7 @@ val IPoint.normalized: IPoint
 val IPoint.mutable: Point get() = Point(x, y)
 val IPoint.immutable: IPoint get() = IPoint(x, y)
 fun IPoint.copy() = IPoint(x, y)
+fun IPoint.steps(p: IPoint): Int = Point.steps(this, p)
 
 interface IPointInt {
     val x: Int

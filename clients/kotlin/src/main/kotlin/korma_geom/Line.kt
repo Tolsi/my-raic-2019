@@ -1,9 +1,9 @@
 package korma_geom
 
-import extensions.lines
+import extensions.boundLines
 
 data class Line(val from: Point, val to: Point) {
-    val length: Double get() = run { from.distanceTo(to) }
+    val length: Double by lazy { from.distanceTo(to) }
 
     init {
         require(from != to)
@@ -24,6 +24,34 @@ data class Line(val from: Point, val to: Point) {
     // todo is it works?
     fun intersects(p: Point): Boolean {
         return infiniteIntersects(p) && isInRectangleBetweenPoints(p)
+    }
+
+    fun intersectsDirected(p: Point): Boolean {
+        val lineDirections = from.directionTo(to)
+        val checkF = {
+            when (lineDirections.size) {
+                0 -> p == from && p == to
+                1 -> when (lineDirections.first()) {
+                    Direction.UP -> p.y > from.y
+                    Direction.DOWN -> p.y < from.y
+                    Direction.LEFT -> p.x < from.x
+                    Direction.RIGHT -> p.x > from.x
+                }
+                2 -> when (lineDirections.sortedBy { it.ordinal }) {
+                    (Direction.UP to Direction.RIGHT) -> p.x > from.x && p.y > from.y
+                    (Direction.UP to Direction.LEFT) -> p.x < from.x && p.y > from.y
+                    (Direction.RIGHT to Direction.DOWN) -> p.x > from.x && p.y < from.y
+                    (Direction.DOWN to Direction.LEFT) -> p.x < from.x && p.y < from.y
+                    else -> false
+                }
+                else -> false
+            }
+        }
+        return infiniteIntersects(p) && checkF()
+    }
+
+    fun intersectsDirected(p: Line): Point? {
+        return infiniteIntersects(p)?.takeIf { intersectsDirected(it) }
     }
 
     private fun isInRectangleBetweenPoints(p: Point): Boolean {
@@ -70,6 +98,12 @@ data class Line(val from: Point, val to: Point) {
         return "Line(from=$from, to=$to)"
     }
 
+    fun rotate(angle: Angle): Line {
+        val newToPoint = Point(
+                to.x * Math.cos(angle.radians) - to.y * Math.sin(angle.radians),
+                to.x * Math.sin(angle.radians) + to.y * Math.cos(angle.radians))
+        return Line(from, newToPoint)
+    }
 
     companion object {
         // todo limit!
@@ -83,10 +117,12 @@ data class Line(val from: Point, val to: Point) {
 
         fun fromPointAndAngle(from: Point, angle: Point): Line {
             val speedPoint = angle.copy().normalize()
-            val bigLine = Line(from, speedPoint).times(100.0)
-            val intersectionWithLevel = Global.level.lines().map { bigLine.infiniteIntersects(it) }.filterNotNull().first()
+            val infiniteLine = Line(from, speedPoint)
+            val intersectionWithLevel = Global.level.boundLines().map { infiniteLine.infiniteIntersects(it) }.filterNotNull().first()
             return Line(from, intersectionWithLevel)
         }
+
+        val OneLenghtZeroAngle = Line(Point(0, 0), Point(1, 0))
     }
 }
 

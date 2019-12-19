@@ -21,8 +21,8 @@ object Global {
         if (!Global.init) {
             level = game.level
             properties = game.properties
-            init = true
             this.debug = debug
+            init = true
             startPositions = game.units.map { it.id to it.position.toPoint() }.toMap()
             wallsAsRectangles = level.tilesToRectangles(model.Tile.WALL)
             wallsAsPolygon = level.tilesToPolygons(model.Tile.WALL)

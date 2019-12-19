@@ -4,12 +4,12 @@ import Debug
 import Global
 import korma_geom.*
 import korma_geom.shape.*
+import korma_geom.triangle.Triangle
 import model.*
 import model.Unit
 import simulation.WorldSimulation
 import strategies.*
 import java.awt.Color
-import kotlin.random.Random
 
 class GameDataExtension {
     public lateinit var me: model.Unit
@@ -93,20 +93,26 @@ class GameDataExtension {
         }
     }
 
-    fun drawPolygon(p: Shape2d.Polygon) {
-        val c = randomColor().toColorFloat(0.5f)
-        val pc = randomColor().toColorFloat(0.5f)
-        p.closedPoints.windowed(2).forEach { (f, s) ->
-            debug.draw(CustomData.Line(f.toVec2Float(), s.toVec2Float(), 0.2f, c))
-        }
-        for (point in p.points) {
-            debug.draw(CustomData.Rect(point.toVec2Float(), Vec2Float(0.2f, 0.2f), pc))
-        }
-    }
-
     fun drawWallsPolygons() {
         for (p in Global.wallsAsPolygon) {
             drawPolygon(p)
+        }
+    }
+
+    fun drawViewAreaAndWallsIntersections() {
+        if (me.weapon != null && me.weapon!!.lastAngle != null) {
+            val lastAngleLine = Line.OneLenghtZeroAngle.rotate(me.weapon!!.lastAngle!!.radians)
+            val aimBoundsPoints = me.weapon!!.spreadRange().bounds().toList().map {
+                Global.level.boundLines().asSequence().mapNotNull {
+                    // todo intersectsDirected
+                    lastAngleLine.intersectsDirected(it)
+                }.first()
+            }
+            val triangle = Triangle(me.position.toPoint(), aimBoundsPoints.get(0), aimBoundsPoints.get(1))
+
+//            for (p in Global.wallsAsPolygon) {
+                drawPolygon(triangle.toPolygon())
+//            }
         }
     }
 
@@ -216,6 +222,17 @@ class GameDataExtension {
                 debug.draw(CustomData.PlacedText("$y", Vec2Float(-1f, y.toFloat() - 0.5f), TextAlignment.LEFT, 16f, Color.WHITE.toColorFloat()))
             }
         }
+
+        fun drawPolygon(p: Shape2d.Polygon, alpha: Float = 0.5f) {
+            val c = randomColor().toColorFloat(alpha)
+            val pc = randomColor().toColorFloat(alpha)
+            p.closedPoints.windowed(2).forEach { (f, s) ->
+                Global.debug.draw(CustomData.Line(f.toVec2Float(), s.toVec2Float(), 0.2f, c))
+            }
+            for (point in p.points) {
+                Global.debug.draw(CustomData.Rect(point.toVec2Float(), Vec2Float(0.2f, 0.2f), pc))
+            }
+        }
     }
 }
 
@@ -268,13 +285,15 @@ fun model.Level.tilesToRectangles(tileType: model.Tile): Collection<Rectangle> {
 //}
 
 fun model.Level.tilesToPolygons(tileType: model.Tile): List<Shape2d.Polygon> {
-    var result = mutableSetOf<Shape2d.Polygon>()
+    val result = mutableSetOf<Shape2d.Polygon>()
 
     this.tiles.forEachIndexed { x, line ->
         line.forEachIndexed { y, tile ->
             if (tile == tileType &&
-                    x != 0 && x != Global.level.width.toInt() - 1 &&
-                    y != 0 && y != Global.level.height.toInt() - 1) {
+                    x != 0 &&
+                    x != Global.level.width.toInt() - 1 &&
+//                    y != 0 &&
+                    y != Global.level.height.toInt() - 1) {
 //                val newResult = result.toMutableSet()
                 val rect = Shape2d.Rectangle(x, y, 1, 1)
                 if (result.isEmpty()) {
@@ -295,7 +314,8 @@ fun model.Level.tilesToPolygons(tileType: model.Tile): List<Shape2d.Polygon> {
     }
 
     return result.
-            map { it.sortPoints() }.
+//            sortedBy { it.points.size }.
+            map { it.travellingSalesmanProblem() }.
             map { it.simplify() }.
             toList()
 }
@@ -378,11 +398,11 @@ fun Unit.isOnLadder(): Boolean {
     return this.centerAndBootom().any { p -> Global.laddersAsRectangles.any { it.contains(p) } }
 }
 
-fun Weapon.aimRange(): ClosedRange<Angle> {
+fun Weapon.spreadRange(): ClosedRange<Angle> {
     return (Angle.fromRadians(this.lastAngle!! - this.spread)).rangeTo(Angle.fromRadians(this.lastAngle!! + this.spread))
 }
 
-fun IRectangle.lines(): Collection<Line> {
+fun IRectangle.boundLines(): Collection<Line> {
     return listOf(
             this.leftSide().toLine(),
             this.rightSide().toLine(),
@@ -408,4 +428,8 @@ fun <T> List<T>.permutations(): Sequence<List<T>> {
                 yield(newPerm)
             }
     }
+}
+
+fun <T: Comparable<T>> ClosedRange<T>.bounds(): Pair<T, T> {
+    return start to endInclusive
 }
