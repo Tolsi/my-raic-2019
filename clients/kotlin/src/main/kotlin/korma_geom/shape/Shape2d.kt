@@ -6,6 +6,7 @@ import korma_geom.internal.niceStr
 import kotlin.math.PI
 import kotlin.math.hypot
 import kac.Stack
+import kds.Array2
 import korma.algo.AStar
 
 abstract class Shape2d {
@@ -221,12 +222,13 @@ fun Shape2d.merge(shape2d: Shape2d): Shape2d.Polygon? {
 }
 
 fun Collection<Point>.travellingSalesmanProblem(): List<Point>? {
-//    val allowedPaths = Stack<List<Point>>()
+    // dfs
+    val allowedPaths = Stack<List<Point>>()
     // bfs
-    val allowedPaths = Queue<List<Point>>()
+//    val allowedPaths = Queue<List<Point>>()
     val sortedPoints = this.groupBy { it.x }.flatMap { it.value.sortedBy { it.y } }
     val startAndPreEndPoint = sortedPoints.first()
-    allowedPaths.add(listOf(startAndPreEndPoint))
+    allowedPaths.push(listOf(startAndPreEndPoint))
     do {
         val mayBePath = allowedPaths.poll()
         val notUsed = this.toSet().minus(mayBePath)
@@ -236,12 +238,12 @@ fun Collection<Point>.travellingSalesmanProblem(): List<Point>? {
         } else {
             val nextPoints = lastPoint.neighbours.filter { notUsed.contains(it) }
             nextPoints.forEach {
-                val mayBePathBack = notUsed.plus(startAndPreEndPoint).minus(it).dfs(it, startAndPreEndPoint)
+                val mayBePathBack = notUsed.plus(startAndPreEndPoint).aStar(it, startAndPreEndPoint)?.dropLast(1)
                 if (mayBePathBack != null) {
                     if (mayBePathBack.size == notUsed.size) {
                         return mayBePath.plus(mayBePathBack)
                     } else {
-                        allowedPaths.add(mayBePath.plus(it))
+                        allowedPaths.push(mayBePath.plus(it))
                     }
                 }
             }
@@ -294,6 +296,12 @@ fun Collection<Point>.bfs(from: Point, to: Point): List<Point>? {
         }
     } while (allowedPaths.isNotEmpty())
     return null
+}
+
+fun Collection<Point>.aStar(from: Point, to: Point): List<Point>? {
+    val set = this.toSet()
+    val board = Array2.withGen(Global.level.width.toInt(), Global.level.height.toInt(), { x,y -> !set.contains(Point(x, y))})
+    return AStar.find(board, from.x.toInt(), from.y.toInt(), to.x.toInt(), to.y.toInt()).toPoints().map { it.asDouble() }
 }
 
 fun List<IPoint>.toPolygon(): Shape2d.Polygon {
