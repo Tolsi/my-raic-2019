@@ -1,6 +1,7 @@
 package korma_geom
 
 import extensions.boundLines
+import simulation.WorldSimulation
 
 data class Line(val from: Point, val to: Point) {
     val length: Double by lazy { from.distanceTo(to) }
@@ -26,23 +27,34 @@ data class Line(val from: Point, val to: Point) {
         return infiniteIntersects(p) && isInRectangleBetweenPoints(p)
     }
 
-    fun intersectsDirected(p: Point): Boolean {
-        val lineDirections = from.directionTo(to)
+    fun intersectsInfiniteDirected(p: Point): Boolean {
         val checkF = {
+            val lineDirections = from.directionTo(to)
             when (lineDirections.size) {
                 0 -> p == from && p == to
                 1 -> when (lineDirections.first()) {
-                    Direction.UP -> p.y > from.y
-                    Direction.DOWN -> p.y < from.y
-                    Direction.LEFT -> p.x < from.x
-                    Direction.RIGHT -> p.x > from.x
+                    Direction.UP ->
+                        p.y >= from.y
+                    Direction.DOWN ->
+                        p.y <= from.y
+                    Direction.LEFT ->
+                        p.x <= from.x
+                    Direction.RIGHT ->
+                        p.x >= from.x
                 }
-                2 -> when (lineDirections.sortedBy { it.ordinal }) {
-                    (Direction.UP to Direction.RIGHT) -> p.x > from.x && p.y > from.y
-                    (Direction.UP to Direction.LEFT) -> p.x < from.x && p.y > from.y
-                    (Direction.RIGHT to Direction.DOWN) -> p.x > from.x && p.y < from.y
-                    (Direction.DOWN to Direction.LEFT) -> p.x < from.x && p.y < from.y
-                    else -> false
+                2 -> {
+                    val sorted = lineDirections.sortedBy { it.ordinal }
+                    when (sorted.first() to sorted.last()) {
+                        (Direction.UP to Direction.RIGHT) ->
+                            p.x >= from.x && p.y >= from.y
+                        (Direction.UP to Direction.LEFT) ->
+                            p.x <= from.x && p.y >= from.y
+                        (Direction.RIGHT to Direction.DOWN) ->
+                            p.x >= from.x && p.y <= from.y
+                        (Direction.DOWN to Direction.LEFT) ->
+                            p.x <= from.x && p.y <= from.y
+                        else -> false
+                    }
                 }
                 else -> false
             }
@@ -50,8 +62,8 @@ data class Line(val from: Point, val to: Point) {
         return infiniteIntersects(p) && checkF()
     }
 
-    fun intersectsDirected(p: Line): Point? {
-        return infiniteIntersects(p)?.takeIf { intersectsDirected(it) }
+    fun intersectsInfiniteDirected(p: Line): Point? {
+        return infiniteIntersects(p)?.takeIf { intersectsInfiniteDirected(it) }
     }
 
     private fun isInRectangleBetweenPoints(p: Point): Boolean {
@@ -59,7 +71,15 @@ data class Line(val from: Point, val to: Point) {
                 p.y >= Math.min(from.y, to.y) && p.y <= Math.max(from.y, to.y)
     }
 
-    fun infiniteIntersects(p: Point): Boolean = (p.x - from.x) / (to.x - from.x) == (p.y - from.y) / (to.y - from.y)
+    fun infiniteIntersects(p: Point): Boolean =
+            if (a() == 0.0) {
+                from.y == p.y
+            } else if (b() == 0.0) {
+                from.x == p.x
+            } else {
+                (p.x - from.x) / (to.x - from.x) - (p.y - from.y) / (to.y - from.y) <= WorldSimulation.EPS
+            }
+
     fun infiniteIntersects(p: Line): Point? {
         val d = (this.b() * p.a() - this.a() * p.b())
         val x = (this.c() * p.b() - this.b() * p.c()) / d
@@ -99,10 +119,12 @@ data class Line(val from: Point, val to: Point) {
     }
 
     fun rotate(angle: Angle): Line {
+        val diffX = to.x - from.x
+        val diffY = to.y - from.y
         val newToPoint = Point(
-                to.x * Math.cos(angle.radians) - to.y * Math.sin(angle.radians),
-                to.x * Math.sin(angle.radians) + to.y * Math.cos(angle.radians))
-        return Line(from, newToPoint)
+                diffX * Math.cos(angle.radians) - diffY * Math.sin(angle.radians),
+                diffX * Math.sin(angle.radians) + diffY * Math.cos(angle.radians))
+        return Line(from, from.plus(newToPoint).mutable)
     }
 
     companion object {

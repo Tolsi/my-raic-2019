@@ -169,6 +169,7 @@ fun Triangle.pointCW(p: IPoint): IPoint = this.point(getPointIndexOffset(p, -1))
 fun Triangle.pointCCW(p: IPoint): IPoint = this.point(getPointIndexOffset(p, +1))
 fun Triangle.oppositePoint(t: Triangle, p: IPoint): IPoint = this.pointCW(t.pointCW(p))
 
+// todo fix orientation stuff
 fun Triangle(p0: IPoint, p1: IPoint, p2: IPoint, fixOrientation: Boolean = false, checkOrientation: Boolean = true): Triangle.Base {
     @Suppress("NAME_SHADOWING")
     var p1 = p1

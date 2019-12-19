@@ -101,18 +101,21 @@ class GameDataExtension {
 
     fun drawViewAreaAndWallsIntersections() {
         if (me.weapon != null && me.weapon!!.lastAngle != null) {
-            val lastAngleLine = Line.OneLenghtZeroAngle.rotate(me.weapon!!.lastAngle!!.radians)
-            val aimBoundsPoints = me.weapon!!.spreadRange().bounds().toList().map {
+            val zeroAngleLine = me.centerPosition.toPoint().toZeroAngleLine()
+            val aimBoundsPoints = me.weapon!!.spreadRange().bounds().toList().map { angle ->
                 Global.level.boundLines().asSequence().mapNotNull {
                     // todo intersectsDirected
-                    lastAngleLine.intersectsDirected(it)
+                    zeroAngleLine.rotate(angle).intersectsInfiniteDirected(it)
                 }.first()
             }
-            val triangle = Triangle(me.position.toPoint(), aimBoundsPoints.get(0), aimBoundsPoints.get(1))
+            val triangle = Triangle(aimBoundsPoints.get(0), me.centerPosition.toPoint(), aimBoundsPoints.get(1), fixOrientation = false, checkOrientation = false)
 
-//            for (p in Global.wallsAsPolygon) {
-                drawPolygon(triangle.toPolygon())
-//            }
+            Global.wallsAsPolygon.plus(notMe().map { Shape2d.Rectangle(it.asRectangle).toPolygon() }).forEach { p ->
+                val clipped = p.clip(triangle.toPolygon())
+                if (clipped.points.isNotEmpty()) {
+                    drawPolygon(clipped)
+                }
+            }
         }
     }
 
@@ -285,37 +288,7 @@ fun model.Level.tilesToRectangles(tileType: model.Tile): Collection<Rectangle> {
 //}
 
 fun model.Level.tilesToPolygons(tileType: model.Tile): List<Shape2d.Polygon> {
-    val result = mutableSetOf<Shape2d.Polygon>()
-
-    this.tiles.forEachIndexed { x, line ->
-        line.forEachIndexed { y, tile ->
-            if (tile == tileType &&
-                    x != 0 &&
-                    x != Global.level.width.toInt() - 1 &&
-//                    y != 0 &&
-                    y != Global.level.height.toInt() - 1) {
-                val rect = Shape2d.Rectangle(x, y, 1, 1)
-                if (result.isEmpty()) {
-                    result.add(rect.toPolygon())
-                } else {
-                    val mergedPolygonAndResults = result.asSequence().map { it to it.merge(rect) }.filter { it.second != null }.toList()
-                    if (mergedPolygonAndResults.isEmpty()) {
-                        result.add(rect.toPolygon())
-                    } else {
-                        val allMerged = mergedPolygonAndResults.map { it.second!! }.reduce { f, s -> f.merge(s)!! }
-                        mergedPolygonAndResults.forEach { result.remove(it.first) }
-                        result.add(allMerged)
-                    }
-                }
-            }
-        }
-    }
-
-    return result.
-//            sortedBy { it.points.size }.
-            map { it.travellingSalesmanProblem() }.
-            map { it.simplify() }.
-            toList()
+    return Global.wallsAsRectangles.map { it.points.toPolygon() }
 }
 
 fun Point.toRectangleWithCenterInPoint(radius: Double): Rectangle {
@@ -428,6 +401,10 @@ fun <T> List<T>.permutations(): Sequence<List<T>> {
     }
 }
 
-fun <T: Comparable<T>> ClosedRange<T>.bounds(): Pair<T, T> {
+fun <T : Comparable<T>> ClosedRange<T>.bounds(): Pair<T, T> {
     return start to endInclusive
+}
+
+fun Point.toZeroAngleLine(): Line {
+    return Line(this, this.right)
 }

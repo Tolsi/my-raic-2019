@@ -141,6 +141,10 @@ fun List<IPoint>.containsPoint(x: Double, y: Double): Boolean {
 // Implements Sutherland–Hodgman algorithm
 fun Shape2d.clip(clipper: Shape2d): Shape2d.Polygon {
     require(this.closed && clipper.closed)
+    // todo what if it is inside of clipper?
+//    if (this.getAllPoints().all { clipper.containsPoint(it.x, it.y) }) {
+//        return this.toPolygon()
+//    }
     val clipperPolygon = clipper.toPolygon()
     return clipperPolygon.points.indices.fold(this.toPolygon(), { polygon, i ->
         //i and k are two consecutive indexes
@@ -300,7 +304,7 @@ fun Collection<Point>.bfs(from: Point, to: Point): List<Point>? {
 
 fun Collection<Point>.aStar(from: Point, to: Point): List<Point>? {
     val set = this.toSet()
-    val board = Array2.withGen(Global.level.width.toInt(), Global.level.height.toInt(), { x,y -> !set.contains(Point(x, y))})
+    val board = Array2.withGen(Global.level.width.toInt(), Global.level.height.toInt(), { x, y -> !set.contains(Point(x, y)) })
     return AStar.find(board, from.x.toInt(), from.y.toInt(), to.x.toInt(), to.y.toInt()).toPoints().map { it.asDouble() }
 }
 
