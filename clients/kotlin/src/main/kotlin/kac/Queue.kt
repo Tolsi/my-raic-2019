@@ -25,8 +25,9 @@ package kac
 import java.util.*
 
 @Suppress("RedundantVisibilityModifier")
-public class Stack<T> : Collection<T> {
+public class Queue<T> : Collection<T> {
     private var head: Node<T>? = null
+    private var tail: Node<T>? = null
     public override var size: Int = 0
         private set
 
@@ -34,10 +35,15 @@ public class Stack<T> : Collection<T> {
         var next: Node<T>? = null
     }
 
-    public fun push(item: T) {
+    public fun add(item: T) {
         val new = Node(item)
-        new.next = head
-        head = new
+        if (this.head == null) {
+            this.head = new
+            this.tail = new
+        } else {
+            this.tail!!.next = new
+            this.tail = new
+        }
         size++
     }
 
