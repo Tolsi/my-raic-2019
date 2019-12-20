@@ -28,55 +28,69 @@ data class Line(val from: Point, val to: Point) {
         return infiniteIntersects(p) && isInRectangleBetweenPoints(p)
     }
 
-    fun intersectsInfiniteDirected(p: Point): Boolean {
-        val checkF = {
-            val lineDirections = from.directionTo(to)
-            when (lineDirections.size) {
-                0 -> p == from && p == to
-                1 -> when (lineDirections.first()) {
-                    Direction.UP ->
-                        p.y >= from.y
-                    Direction.DOWN ->
-                        p.y <= from.y
-                    Direction.LEFT ->
-                        p.x <= from.x
-                    Direction.RIGHT ->
-                        p.x >= from.x
-                }
-                2 -> {
-                    val sorted = lineDirections.sortedBy { it.ordinal }
-                    when (sorted.first() to sorted.last()) {
-                        (Direction.UP to Direction.RIGHT) ->
-                            p.x >= from.x && p.y >= from.y
-                        (Direction.UP to Direction.LEFT) ->
-                            p.x <= from.x && p.y >= from.y
-                        (Direction.RIGHT to Direction.DOWN) ->
-                            p.x >= from.x && p.y <= from.y
-                        (Direction.DOWN to Direction.LEFT) ->
-                            p.x <= from.x && p.y <= from.y
-                        else -> false
-                    }
-                }
-                else -> false
+    fun isDirectedTo(p: Point, lineDirections: List<Direction>): Boolean {
+        // todo не противоположные
+        return when (lineDirections.size) {
+            0 -> p == from && p == to
+            1 -> when (lineDirections.first()) {
+                Direction.UP ->
+                    p.y > from.y && p.x == from.x
+                Direction.DOWN ->
+                    p.y < from.y && p.x == from.x
+                Direction.LEFT ->
+                    p.x < from.x && p.y == from.y
+                Direction.RIGHT ->
+                    p.x > from.x && p.y == from.y
             }
+            2 -> {
+                val sorted = lineDirections.sortedBy { it.ordinal }
+                when (sorted.first() to sorted.last()) {
+                    (Direction.UP to Direction.RIGHT) ->
+                        p.x > from.x && p.y > from.y
+                    (Direction.UP to Direction.LEFT) ->
+                        p.x < from.x && p.y > from.y
+                    (Direction.RIGHT to Direction.DOWN) ->
+                        p.x > from.x && p.y < from.y
+                    (Direction.DOWN to Direction.LEFT) ->
+                        p.x < from.x && p.y < from.y
+                    else -> false
+                }
+            }
+            else -> false
         }
-        return infiniteIntersects(p) && checkF()
+    }
+
+    fun intersectsInfiniteDirected(p: Point): Boolean {
+        return infiniteIntersects(p) && isDirectedTo(p, from.directionsTo(to))
     }
 
     fun intersectsInfiniteDirected(p: Line): Point? {
         return infiniteIntersects(p)?.takeIf { intersectsInfiniteDirected(it) }
     }
 
-    private fun isInRectangleBetweenPoints(p: Point): Boolean {
-        return p.x >= Math.min(from.x, to.x) && p.x <= Math.max(from.x, to.x) &&
-                p.y >= Math.min(from.y, to.y) && p.y <= Math.max(from.y, to.y)
+    fun intersectsDirected(p: Line): Point? {
+        return intersects(p)?.takeIf {
+            isDirectedTo(it, from.directionsTo(to))
+        }
     }
 
+    private fun isInRectangleBetweenPoints(p: Point): Boolean {
+        return (p.x >= Math.min(from.x, to.x) && p.x <= Math.max(from.x, to.x) &&
+                p.y >= Math.min(from.y, to.y) && p.y <= Math.max(from.y, to.y))// || isPointTooClose(p)
+    }
+
+//    private fun isPointTooClose(p: Point): Boolean {
+//        return (Math.abs(p.x - from.x) <= WorldSimulation.EPS &&
+//                Math.abs(p.x - to.x) <= WorldSimulation.EPS) ||
+//                (Math.abs(p.y - from.y) <= WorldSimulation.EPS &&
+//                        Math.abs(p.y - to.y) <= WorldSimulation.EPS)
+//    }
+
     fun infiniteIntersects(p: Point): Boolean =
-            if (a() == 0.0) {
-                from.y == p.y
-            } else if (b() == 0.0) {
-                from.x == p.x
+            if (a() <= WorldSimulation.EPS) {
+                from.y - p.y <= WorldSimulation.EPS
+            } else if (b() <= WorldSimulation.EPS) {
+                from.x - p.x <= WorldSimulation.EPS
             } else {
                 (p.x - from.x) / (to.x - from.x) - (p.y - from.y) / (to.y - from.y) <= WorldSimulation.EPS
             }
@@ -88,8 +102,10 @@ data class Line(val from: Point, val to: Point) {
         return Point(x, y).takeIf { x.isFinite() && y.isFinite() }
     }
 
+    // todo работает только с бесконечными прямыми
     fun intersects(p: Line): Point? {
-        return infiniteIntersects(p)?.takeIf { isInRectangleBetweenPoints(it) }
+        return points().find { p.intersects(it) }
+                ?: infiniteIntersects(p)?.takeIf { isInRectangleBetweenPoints(it) && p.isInRectangleBetweenPoints(it) }
     }
 
     fun toLenghtOneLine(): Line {

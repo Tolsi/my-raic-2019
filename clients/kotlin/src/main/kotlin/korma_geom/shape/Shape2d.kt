@@ -1,6 +1,5 @@
 package korma_geom.shape
 
-import extensions.permutations
 import kac.Queue
 import korma_geom.*
 import korma_geom.internal.niceStr
@@ -9,6 +8,7 @@ import kotlin.math.hypot
 import kac.Stack
 import kds.Array2
 import korma.algo.AStar
+import simulation.WorldSimulation
 
 abstract class Shape2d {
     abstract val paths: List<IPointArrayList>
@@ -188,12 +188,12 @@ private fun clip(polygon: Shape2d.Polygon, p1: Point, p2: Point): Shape2d.Polygo
         val k_pos = (x2 - x1) * (ky - y1) - (y2 - y1) * (kx - x1)
 
         // Case 1 : When both points are inside
-        if (i_pos < 0 && k_pos < 0) {
+        if (i_pos < WorldSimulation.EPS && k_pos < WorldSimulation.EPS) {
             //Only second point is added
             newPolygonPoints.add(Point(kx, ky))
         }
         // Case 2: When only first point is outside
-        else if (i_pos >= 0 && k_pos < 0) {
+        else if (i_pos >= WorldSimulation.EPS && k_pos < WorldSimulation.EPS) {
             // Point of intersection with edge
             // and the second point is added
             val l1 = Line(Point(x1, y1), Point(x2, y2))
@@ -202,7 +202,7 @@ private fun clip(polygon: Shape2d.Polygon, p1: Point, p2: Point): Shape2d.Polygo
             newPolygonPoints.add(Point(kx, ky))
         }
         // Case 3: When only second point is outside
-        else if (i_pos < 0 && k_pos >= 0) {
+        else if (i_pos < WorldSimulation.EPS && k_pos >= WorldSimulation.EPS) {
             //Only point of intersection with edge is added
             val l1 = Line(Point(x1, y1), Point(x2, y2))
             val l2 = Line(Point(ix, iy), Point(kx, ky))
@@ -356,7 +356,7 @@ fun Shape2d.Polygon.travellingSalesmanProblem(): Shape2d.Polygon {
 
 fun Shape2d.Polygon.simplify(): Shape2d.Polygon {
     val result = closedPoints.windowed(2).fold(null as Direction? to listOf<Point>()) { (lastDirection, points), (f, s) ->
-        val newDirection = f.directionTo(s).first()
+        val newDirection = f.directionsTo(s).first()
         val newPoints = if (lastDirection == null || lastDirection != newDirection) {
             points.plus(f)
         } else {

@@ -132,7 +132,7 @@ open class MySituativeStrategy : Strategy() {
 //        line to go to point
 //        debug.draw(CustomData.Line(me.position.toVec2Float(), goToPoint.toVec2Float(), 0.2f, ColorFloat.Green))
 //        debug level
-        s.drawWallsPolygons()
+//        s.drawWallsPolygons()
         s.drawViewAreaAndWallsIntersections()
 //        s.debugAllBullets()
 //        targetToUnit?.let {
