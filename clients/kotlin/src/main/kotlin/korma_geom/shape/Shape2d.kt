@@ -29,6 +29,7 @@ abstract class Shape2d {
     data class Line(val x0: Double, val y0: Double, val x1: Double, val y1: Double) : Shape2d(), WithArea {
         companion object {
             inline operator fun invoke(x0: Number, y0: Number, x1: Number, y1: Number) = Line(x0.toDouble(), y0.toDouble(), x1.toDouble(), y1.toDouble())
+            inline operator fun invoke(p1: Point, p2: Point) = Line(p1.x, p1.y, p2.x, p2.y)
         }
 
         override val paths get() = listOf(PointArrayList(2).apply { add(x0, y0).add(x1, y1) })

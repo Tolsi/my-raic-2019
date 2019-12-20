@@ -5,6 +5,7 @@ import Global
 import korma_geom.*
 import korma_geom.shape.*
 import korma_geom.triangle.Triangle
+import korma_geom.triangle.pointInsideTriangle
 import model.*
 import model.Unit
 import simulation.WorldSimulation
@@ -107,12 +108,14 @@ class GameDataExtension {
         if (me.weapon != null && me.weapon!!.lastAngle != null) {
             val fromPoint = me.centerPosition.toPoint()
             val zeroAngleLine = fromPoint.toZeroAngleLine()
+            val aimLine = zeroAngleLine.rotate(me.weapon!!.lastAngle!!.radians)
             val aimBoundsPoints = me.weapon!!.spreadRange().bounds().toList().map { angle ->
                 Global.level.boundLines().asSequence().mapNotNull {
                     // todo intersectsDirected
                     zeroAngleLine.rotate(angle).intersectsInfiniteDirected(it)
                 }.first()
             }
+
             val triangle = Triangle(aimBoundsPoints.get(0), fromPoint, aimBoundsPoints.get(1), fixOrientation = false, checkOrientation = false)
 
             val enemiesPolygons = enemies().map { it.asRectangle.toPolygon() }
@@ -128,18 +131,46 @@ class GameDataExtension {
                 p.clip(triangle.toPolygon()).takeIf { it.points.isNotEmpty() }
             }
 
+            var scanLine = aimLine.rotate(90.degrees)
+            var leftAimLine = Line(fromPoint, aimBoundsPoints.get(1))
+            var rightAimLine = Line(fromPoint, aimBoundsPoints.get(0))
+
+//            drawPolygon(triangle.toPolygon())
+            var iterateTriangle = triangle
+
             val allPoints = clippedWallsPolygons.plus(clippedEnemiesPolygons).plus(clippedFriendsPolygons).flatMap { poly -> poly.points.map { it to poly } }
-
-            val leftAimLine = Line(fromPoint, aimBoundsPoints.get(0))
-            val rightAimLine = Line(fromPoint, aimBoundsPoints.get(1))
-
-            drawPolygon(triangle.toPolygon())
-
-            allPoints.map { it to fromPoint.distanceTo(it.first) }.sortedBy { it.second }.forEach { (pointAndPoly, distance) ->
-                val (point, poly) = pointAndPoly
-                val leftPoint = leftAimLine.withLength(distance).to
-                val rightPoint = rightAimLine.withLength(distance).to
-                debug.draw(CustomData.Line(leftPoint.toVec2Float(), rightPoint.toVec2Float(), 0.2f, Color.MAGENTA.toColorFloat()))
+            allPoints.sortedBy { fromPoint.distanceTo(it.first) }.forEach { (point, poly) ->
+                if (!iterateTriangle.pointInsideTriangle(point)) {
+                    return@forEach
+                }
+                val movedScanLine = scanLine.moveTo(point)
+                val leftPoint = leftAimLine.infiniteIntersects(movedScanLine)!!
+                val rightPoint = rightAimLine.infiniteIntersects(movedScanLine)!!
+//                debug.draw(CustomData.Line(fromPoint.toVec2Float(), leftPoint.toVec2Float(), 0.1f, Color.GRAY.toColorFloat()))
+//                debug.draw(CustomData.Line(fromPoint.toVec2Float(), rightPoint.toVec2Float(), 0.1f, Color.GRAY.toColorFloat()))
+                val line = Shape2d.Line(leftPoint, rightPoint)
+                drawPolygon(poly)
+                drawPolygon(iterateTriangle.toPolygon())
+                debug.draw(CustomData.Line(leftPoint.toVec2Float(), rightPoint.toVec2Float(), 0.1f, Color.GRAY.toColorFloat()))
+                val clipped = poly.clip(line).points.epsUnique().filter { iterateTriangle.pointInsideTriangle(it) }
+                clipped.forEach {
+                    debug.draw(CustomData.Rect(it.toVec2Float(), Vec2Float(0.2f, 0.2f), Color.YELLOW.toColorFloat()))
+                }
+                if (clipped.size >= 2) {
+                    debug.draw(CustomData.Line(clipped.first().toVec2Float(), clipped.last().toVec2Float(), 0.2f, Color.MAGENTA.toColorFloat()))
+                    val uniquePoint = clipped.epsRemove(line.getAllPoints()).toSet().first()
+                    if (clipped.epsContains(leftPoint)) {
+                        leftAimLine = Line(fromPoint, uniquePoint)
+                    } else if (clipped.epsContains(rightPoint)) {
+                        rightAimLine = Line(fromPoint, uniquePoint)
+                    } else {
+                        val i = 0
+                    }
+//                    debug.draw(CustomData.Line(fromPoint.toVec2Float(), leftAimLine.to.toVec2Float(), 0.1f, Color.GREEN.toColorFloat()))
+//                    debug.draw(CustomData.Line(fromPoint.toVec2Float(), rightAimLine.to.toVec2Float(), 0.1f, Color.GREEN.toColorFloat()))
+                    iterateTriangle = Triangle(leftAimLine.times(10.0).to, fromPoint, rightAimLine.times(10.0).to, fixOrientation = false, checkOrientation = false)
+                    val i = 0
+                }
             }
 
 
@@ -341,11 +372,7 @@ fun model.Level.tilesToPolygons(tileType: model.Tile): List<Shape2d.Polygon> {
         }
     }
 
-    return result.
-            sortedBy { it.points.size }.
-            map { it.travellingSalesmanProblem() }.
-            map { it.simplify() }.
-            toList()
+    return result.sortedBy { it.points.size }.map { it.travellingSalesmanProblem() }.map { it.simplify() }.toList()
 }
 
 fun Point.toRectangleWithCenterInPoint(radius: Double): Rectangle {
@@ -464,4 +491,54 @@ fun <T : Comparable<T>> ClosedRange<T>.bounds(): Pair<T, T> {
 
 fun Point.toZeroAngleLine(): Line {
     return Line(this, this.right)
+}
+
+fun List<Point>.epsUnique(): List<Point> {
+    return this.fold(listOf()) { res, p ->
+        if (!res.any { it.compareTo(p) == 0 }) {
+            res.plus(p)
+        } else res
+    }
+}
+
+fun List<Point>.epsRemove(remove: Point): List<Point> {
+    return this.fold(mutableListOf()) { res, p ->
+        if (p.compareTo(remove) != 0) {
+            res.add(p)
+            res
+        } else {
+            res
+        }
+    }
+}
+
+fun List<Point>.epsRemove(remove: List<Point>): List<Point> {
+    return this.fold(mutableListOf()) { res, p ->
+        if (remove.all { p.compareTo(it) != 0 }) {
+            res.add(p)
+            res
+        } else {
+            res
+        }
+    }
+}
+
+fun List<Point>.epsContains(p: Point): Boolean {
+    return this.any { it.compareTo(p) == 0 }
+}
+
+fun Point.projectTo(l: Line): Point {
+    // get dot product of e1, e2
+    val e1 = Point(l.to.x - l.from.x, l.to.y - l.from.y)
+    val e2 = Point(x - l.from.x, y - l.from.y)
+    val valDp = e1.dot(e2)
+    // get squared length of e1
+    val len = e1.dot(e1)
+    return Point(l.from.x + valDp * e1.x / len,
+            l.from.y + valDp * e1.y / len)
+}
+
+fun Line.moveTo(point: Point): Line {
+    val normalized = this.toLenghtOneLine().normalize()
+    return Line(point, point.plus(normalized.to).mutable)
 }

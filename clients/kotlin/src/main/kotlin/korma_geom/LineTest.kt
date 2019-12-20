@@ -12,7 +12,7 @@ object LineTest {
 //        println(l1.infiniteIntersects(Point(4, 0)))
 //        println(l1.intersectsInfiniteDirected(l2))
         val tri = Triangle(Point(100,150), Point(200,250),  Point(300,200), false, false)
-        val rec = Shape2d.Rectangle(100, 100, 100, 100)
+        val rec = Shape2d.Line(100, 100, 200, 200)
         println(rec.clip(tri))
     }
 }

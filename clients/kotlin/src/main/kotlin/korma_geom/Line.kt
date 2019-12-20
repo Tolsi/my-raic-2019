@@ -1,5 +1,6 @@
 package korma_geom
 
+import Global
 import extensions.boundLines
 import simulation.WorldSimulation
 
@@ -91,14 +92,20 @@ data class Line(val from: Point, val to: Point) {
         return infiniteIntersects(p)?.takeIf { isInRectangleBetweenPoints(it) }
     }
 
-    fun normalize(): Line {
+    fun toLenghtOneLine(): Line {
         val normX = (to.x - from.x) / length
         val normY = (to.y - from.y) / length
         return Line(from, from.plus(Point(normX, normY)).mutable)
     }
 
+    fun normalize(): Line {
+        val normX = (to.x - from.x) / length
+        val normY = (to.y - from.y) / length
+        return Line(Point.Zero.mutable, Point(normX, normY).mutable)
+    }
+
     fun withLength(length: Double): Line {
-        return normalize().times(length)
+        return toLenghtOneLine().times(length)
     }
 
     fun distance(p: Point): Double {

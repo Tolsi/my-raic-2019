@@ -3,6 +3,7 @@
 package korma_geom
 
 import korma_geom.internal.*
+import simulation.WorldSimulation
 import kotlin.math.*
 
 interface IPoint {
@@ -16,7 +17,7 @@ interface IPoint {
 }
 
 data class Point(override var x: Double, override var y: Double) : Comparable<IPoint>, IPoint {
-    override fun compareTo(other: IPoint): Int = compare(this.x, this.y, other.x, other.y)
+    override fun compareTo(other: IPoint): Int = compareEps(this.x, this.y, other.x, other.y)
 
     companion object {
         val Zero: IPoint = Point(0.0, 0.0)
@@ -46,7 +47,13 @@ data class Point(override var x: Double, override var y: Double) : Comparable<IP
             return if (ret == 0) lx.compareTo(rx) else ret
         }
 
+        fun compareEps(lx: Double, ly: Double, rx: Double, ry: Double): Int {
+            val ret = if (Math.abs(ly - ry) <= WorldSimulation.EPS) 0 else ly.compareTo(ry)
+            return if (ret == 0) if (Math.abs(lx - rx) <= WorldSimulation.EPS) 0 else lx.compareTo(rx) else ret
+        }
+
         fun compare(l: IPoint, r: IPoint): Int = compare(l.x, l.y, r.x, r.y)
+        fun compareEps(l: IPoint, r: IPoint): Int = compareEps(l.x, l.y, r.x, r.y)
 
         fun angle(x1: Double, y1: Double, x2: Double, y2: Double, x3: Double, y3: Double): Angle = Angle.between(x1 - x2, y1 - y2, x1 - x3, y1 - y3)
 
@@ -102,7 +109,20 @@ data class Point(override var x: Double, override var y: Double) : Comparable<IP
         return this.setTo(this.x / len, this.y / len)
     }
 
+    // todo equals and hashcode with Eps
     override fun toString(): String = "(${x.niceStr}, ${y.niceStr})"
+
+//    override fun equals(other: Any?): Boolean {
+//        if (this === other) return true
+//        if (javaClass != other?.javaClass) return false
+//        return compareTo(other as Point) == 0
+//    }
+//
+//    override fun hashCode(): Int {
+//        var result = (x / WorldSimulation.EPS).toInt().hashCode()
+//        result = 31 * result + (y / WorldSimulation.EPS).toInt().hashCode()
+//        return result
+//    }
 }
 
 inline fun Point.mul(s: Number) = mul(s.toDouble())
