@@ -138,6 +138,8 @@ class GameDataExtension {
 //            drawPolygon(triangle.toPolygon())
             var iterateTriangle = triangle
 
+
+            // todo нахождение лицевых граней полигонов, сейчас это все
             val allPoints = clippedWallsPolygons.plus(clippedEnemiesPolygons).plus(clippedFriendsPolygons).flatMap { poly -> poly.points.map { it to poly } }
             allPoints.sortedBy { fromPoint.distanceTo(it.first) }.forEach { (point, poly) ->
                 if (!iterateTriangle.pointInsideTriangle(point)) {
@@ -586,6 +588,7 @@ fun Shape2d.Polygon.lineView(clipper: Line): Line? {
 
 fun Shape2d.Polygon.isPointInside(point: Point): Boolean {
     // todo 100?!
+    // todo пересекает ребро или вершину
     val isIntersectsLine = this.closedPoints.windowed(2).asSequence()
             .any { Line(it.get(0), it.get(1)).intersects(point) }
     return isIntersectsLine || edgeIntersections(Line(point, point.right).times(100.0)).toList().size % 2 != 0
